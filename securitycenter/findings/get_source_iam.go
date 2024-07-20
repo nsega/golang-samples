@@ -14,7 +14,7 @@
 
 package findings
 
-// [START get_iam_policy_source]
+// [START securitycenter_get_source_iam]
 import (
 	"context"
 	"fmt"
@@ -32,7 +32,7 @@ func getSourceIamPolicy(w io.Writer, sourceName string) error {
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 
@@ -42,11 +42,11 @@ func getSourceIamPolicy(w io.Writer, sourceName string) error {
 
 	policy, err := client.GetIamPolicy(ctx, req)
 	if err != nil {
-		return fmt.Errorf("GetIamPolicy(%s): %v", sourceName, err)
+		return fmt.Errorf("GetIamPolicy(%s): %w", sourceName, err)
 	}
 
 	fmt.Fprintf(w, "Policy: %v", policy)
 	return nil
 }
 
-// [END get_iam_policy_source]
+// [END securitycenter_get_source_iam]

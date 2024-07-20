@@ -18,10 +18,11 @@ package secretmanager
 import (
 	"context"
 	"fmt"
+	"hash/crc32"
 	"io"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 )
 
 // accessSecretVersion accesses the payload for the given secret version if one
@@ -35,8 +36,9 @@ func accessSecretVersion(w io.Writer, name string) error {
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create secretmanager client: %v", err)
+		return fmt.Errorf("failed to create secretmanager client: %w", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &secretmanagerpb.AccessSecretVersionRequest{
@@ -46,7 +48,14 @@ func accessSecretVersion(w io.Writer, name string) error {
 	// Call the API.
 	result, err := client.AccessSecretVersion(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to access secret version: %v", err)
+		return fmt.Errorf("failed to access secret version: %w", err)
+	}
+
+	// Verify the data checksum.
+	crc32c := crc32.MakeTable(crc32.Castagnoli)
+	checksum := int64(crc32.Checksum(result.Payload.Data, crc32c))
+	if checksum != *result.Payload.DataCrc32C {
+		return fmt.Errorf("Data corruption detected.")
 	}
 
 	// WARNING: Do not print the secret in a production environment - this snippet

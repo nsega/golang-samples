@@ -27,8 +27,8 @@ import (
 	"io"
 
 	automl "cloud.google.com/go/automl/apiv1"
+	"cloud.google.com/go/automl/apiv1/automlpb"
 	"google.golang.org/api/iterator"
-	automlpb "google.golang.org/genproto/googleapis/cloud/automl/v1"
 )
 
 // listModelEvaluation lists existing model evaluations.
@@ -40,7 +40,7 @@ func listModelEvaluations(w io.Writer, projectID string, location string, modelI
 	ctx := context.Background()
 	client, err := automl.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewClient: %v", err)
+		return fmt.Errorf("NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -57,7 +57,7 @@ func listModelEvaluations(w io.Writer, projectID string, location string, modelI
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("ListModelEvaluations.Next: %v", err)
+			return fmt.Errorf("ListModelEvaluations.Next: %w", err)
 		}
 
 		fmt.Fprintf(w, "Model evaluation name: %v\n", evaluation.GetName())

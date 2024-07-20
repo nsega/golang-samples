@@ -34,6 +34,7 @@ var allowList = []string{
 	"**/*.go",
 	"**/*.md",
 	"**/*.yaml",
+	"**/*.yml",
 	"**/*.sh",
 	"**/*.bash",
 	"**/*.mod",
@@ -53,6 +54,7 @@ var allowList = []string{
 	"**/.gcloudignore",
 	"**/Makefile",
 	".gitignore",
+	"**/.gitkeep",
 
 	// Primarily ML APIs.
 	"**/testdata/**/*.jpg",
@@ -62,6 +64,7 @@ var allowList = []string{
 	"**/testdata/**/*.txt",
 	"**/testdata/**/*.csv",
 	"**/testdata/**/*.mp4",
+	"**/testdata/*.jsonl",
 
 	// Healthcare data.
 	"healthcare/testdata/dicom_00000001_000.dcm",
@@ -71,6 +74,9 @@ var allowList = []string{
 	"webrisk/non_existing_path.path",
 	"webrisk/internal/webrisk_proto/*.proto",
 	"webrisk/testdata/hashes.gob",
+
+	// DLP data
+	"dlp/snippets/**/testdata/*",
 
 	// Endpoints samples.
 	"endpoints/**/*.proto",
@@ -82,6 +88,12 @@ var allowList = []string{
 	"functions/ocr/app/config.json",
 	"functions/slack/config.json",
 
+	// Cloud Functions gen2 picture.
+	"functions/functionsv2/imagemagick/zombie.jpg",
+
+	// Cloud Profiler test outputs
+	"profiler/export/**",
+
 	// Samples that aren't really code. Legacy.
 	"**/appengine/**/*.txt",
 
@@ -92,6 +104,7 @@ var allowList = []string{
 
 	// TODO: cruft that should probably be under "testdata".
 	"appengine_flexible/pubsub/sample_message.json",
+	"appengine_flexible/go115_and_earlier/pubsub/sample_message.json",
 	"dialogflow/resources/**/*",
 	"texttospeech/**/*",
 	"storage/objects/notes.txt",
@@ -104,8 +117,26 @@ var allowList = []string{
 	// Getting Started on GCE systemd service file.
 	"**/gce/**/*.service",
 
-	// sampletests testdata.
-	"testing/sampletests/testdata/raw_log.xml",
+	// cloud-run-button configuration
+	"run/**/app.json",
+
+	// pub/sub schemas
+	"pubsub/**/*.avsc",
+
+	// dataflow flex template metadata files
+	"dataflow/flex-templates/**/metadata.json",
+
+	// document ai sample pdfs
+	"documentai/**/*.pdf",
+
+	// Speech-to-Text audio/video files
+	"speech/resources/commercial_mono.wav",
+
+	// deprecated tests (introduced for IoT samples)
+	"**/*_test.go.deprecated",
+
+	// Spanner proto data files.
+	"spanner/spanner_snippets/spanner/testdata/protos/descriptors.pb",
 }
 
 // Check whether accidental binary files have been checked in.

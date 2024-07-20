@@ -21,8 +21,8 @@ import (
 	"io"
 
 	talent "cloud.google.com/go/talent/apiv4beta1"
+	"cloud.google.com/go/talent/apiv4beta1/talentpb"
 	"google.golang.org/api/iterator"
-	talentpb "google.golang.org/genproto/googleapis/cloud/talent/v4beta1"
 )
 
 // listCompanies lists all companies in the project.
@@ -32,8 +32,9 @@ func listCompanies(w io.Writer, projectID string) error {
 	// Initialize a compnayService client.
 	c, err := talent.NewCompanyClient(ctx)
 	if err != nil {
-		return fmt.Errorf("talent.NewCompanyClient: %v", err)
+		return fmt.Errorf("talent.NewCompanyClient: %w", err)
 	}
+	defer c.Close()
 
 	// Construct a listCompanies request.
 	req := &talentpb.ListCompaniesRequest{
@@ -48,7 +49,7 @@ func listCompanies(w io.Writer, projectID string) error {
 			return nil
 		}
 		if err != nil {
-			return fmt.Errorf("it.Next: %v", err)
+			return fmt.Errorf("it.Next: %w", err)
 		}
 		fmt.Fprintf(w, "Listing company: %q\n", resp.GetName())
 		fmt.Fprintf(w, "Display name: %v\n", resp.GetDisplayName())

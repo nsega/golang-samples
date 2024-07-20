@@ -1,57 +1,57 @@
 module github.com/GoogleCloudPlatform/golang-samples
 
-go 1.11
+go 1.19
 
 require (
-	cloud.google.com/go v0.65.0
-	cloud.google.com/go/bigquery v1.9.0
-	cloud.google.com/go/bigtable v1.4.0
-	cloud.google.com/go/datastore v1.2.0
-	cloud.google.com/go/firestore v1.3.0
-	cloud.google.com/go/logging v1.0.0
-	cloud.google.com/go/pubsub v1.6.1
-	cloud.google.com/go/spanner v1.8.0
-	cloud.google.com/go/storage v1.11.0
-	contrib.go.opencensus.io/exporter/stackdriver v0.13.4
-	github.com/aws/aws-sdk-go v1.34.18
-	github.com/bmatcuk/doublestar/v2 v2.0.1
-	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
-	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/eclipse/paho.mqtt.golang v1.2.0
-	github.com/fluent/fluent-logger-golang v1.5.0
-	github.com/go-sql-driver/mysql v1.5.0
-	github.com/gofrs/uuid v3.3.0+incompatible
-	github.com/golang/protobuf v1.4.2
-	github.com/gomodule/redigo v2.0.0+incompatible
-	github.com/google/go-cmp v0.5.2
-	github.com/google/uuid v1.1.2
-	github.com/googleapis/gax-go/v2 v2.0.5
-	github.com/gorilla/mux v1.8.0
-	github.com/gorilla/websocket v1.4.2
-	github.com/h2non/filetype v1.1.0
-	github.com/jstemmer/go-junit-report v0.9.1
-	github.com/lib/pq v1.8.0
-	github.com/linkedin/goavro/v2 v2.9.8
-	github.com/mailgun/mailgun-go/v3 v3.6.4
-	github.com/mailjet/mailjet-apiv3-go v0.0.0-20190724151621-55e56f74078c
-	github.com/philhofer/fwd v1.0.0 // indirect
-	github.com/sendgrid/smtpapi-go v0.6.0 // indirect
-	github.com/tinylib/msgp v1.1.2 // indirect
-	go.opencensus.io v0.22.4
-	golang.org/x/exp v0.0.0-20200901203048-c4f52b2c50aa
-	golang.org/x/net v0.0.0-20200904194848-62affa334b73
-	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
-	golang.org/x/text v0.3.3
-	golang.org/x/tools v0.0.0-20200904185747-39188db58858
-	google.golang.org/api v0.31.0
-	google.golang.org/appengine v1.6.6
-	google.golang.org/genproto v0.0.0-20200904004341-0bd0a958aa1d
-	google.golang.org/grpc v1.31.1
-	google.golang.org/grpc/examples v0.0.0-20200707005602-4258d12073b4
-	google.golang.org/protobuf v1.25.0
-	gopkg.in/sendgrid/sendgrid-go.v2 v2.0.0
-	gopkg.in/yaml.v2 v2.3.0
+	cloud.google.com/go/batch v1.8.0
+	cloud.google.com/go/bigquery v1.59.1
+	cloud.google.com/go/compute v1.24.0
+	cloud.google.com/go/errorreporting v0.3.0
+	cloud.google.com/go/logging v1.9.0
+	cloud.google.com/go/storage v1.37.0
+	cloud.google.com/go/vision v1.2.0
+	github.com/bmatcuk/doublestar/v2 v2.0.4
+	github.com/golang/protobuf v1.5.4
+	github.com/google/uuid v1.6.0
+	github.com/h2non/filetype v1.1.3
+	golang.org/x/oauth2 v0.19.0
+	google.golang.org/api v0.176.1
+	google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de
+	google.golang.org/protobuf v1.33.0
+	gopkg.in/yaml.v2 v2.4.0
+)
+
+require (
+	cloud.google.com/go v0.112.0 // indirect
+	cloud.google.com/go/auth v0.3.0 // indirect
+	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
+	cloud.google.com/go/iam v1.1.6 // indirect
+	cloud.google.com/go/longrunning v0.5.5 // indirect
+	cloud.google.com/go/vision/v2 v2.8.0 // indirect
+	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/go-logr/logr v1.4.1 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/google/s2a-go v0.1.7 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
+	github.com/googleapis/gax-go/v2 v2.12.3 // indirect
+	go.opencensus.io v0.24.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
+	go.opentelemetry.io/otel v1.24.0 // indirect
+	go.opentelemetry.io/otel/metric v1.24.0 // indirect
+	go.opentelemetry.io/otel/trace v1.24.0 // indirect
+	golang.org/x/crypto v0.22.0 // indirect
+	golang.org/x/net v0.24.0 // indirect
+	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/time v0.5.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240311132316-a219d84964c2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240415180920-8c6c420018be // indirect
+	google.golang.org/grpc v1.63.2 // indirect
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
 
 // https://github.com/jstemmer/go-junit-report/issues/107

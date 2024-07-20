@@ -21,7 +21,7 @@ import (
 	"io"
 
 	talent "cloud.google.com/go/talent/apiv4beta1"
-	talentpb "google.golang.org/genproto/googleapis/cloud/talent/v4beta1"
+	"cloud.google.com/go/talent/apiv4beta1/talentpb"
 )
 
 // deleteJob deletes an existing job by its resource name.
@@ -31,8 +31,9 @@ func deleteJob(w io.Writer, projectID, jobID string) error {
 	// Initialize a jobService client.
 	c, err := talent.NewJobClient(ctx)
 	if err != nil {
-		return fmt.Errorf("talent.NewJobClient: %v", err)
+		return fmt.Errorf("talent.NewJobClient: %w", err)
 	}
+	defer c.Close()
 
 	// Construct a deleteJob request.
 	jobName := fmt.Sprintf("projects/%s/jobs/%s", projectID, jobID)
@@ -43,7 +44,7 @@ func deleteJob(w io.Writer, projectID, jobID string) error {
 	}
 
 	if err := c.DeleteJob(ctx, req); err != nil {
-		return fmt.Errorf("Delete(%s): %v", jobName, err)
+		return fmt.Errorf("Delete(%s): %w", jobName, err)
 	}
 
 	fmt.Fprintf(w, "Deleted job: %q\n", jobName)

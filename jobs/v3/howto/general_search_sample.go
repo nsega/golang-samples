@@ -23,7 +23,7 @@ import (
 	talent "google.golang.org/api/jobs/v3"
 )
 
-// [START basic_keyword_search]
+// [START job_discovery_basic_keyword_search]
 
 // basicJobSearch searches for jobs with query.
 func basicJobSearch(w io.Writer, projectID, companyName, query string) (*talent.SearchJobsResponse, error) {
@@ -31,12 +31,12 @@ func basicJobSearch(w io.Writer, projectID, companyName, query string) (*talent.
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	jobQuery := &talent.JobQuery{
@@ -65,7 +65,7 @@ func basicJobSearch(w io.Writer, projectID, companyName, query string) (*talent.
 	}
 	resp, err := service.Projects.Jobs.Search(parent, req).Do()
 	if err != nil {
-		return nil, fmt.Errorf("failed to search for jobs with query %q: %v", query, err)
+		return nil, fmt.Errorf("failed to search for jobs with query %q: %w", query, err)
 	}
 
 	fmt.Fprintln(w, "Jobs:")
@@ -76,9 +76,9 @@ func basicJobSearch(w io.Writer, projectID, companyName, query string) (*talent.
 	return resp, nil
 }
 
-// [END basic_keyword_search]
+// [END job_discovery_basic_keyword_search]
 
-// [START category_filter]
+// [START job_discovery_category_filter_search]
 
 // categoryFilterSearch searches for jobs on category filter.
 func categoryFilterSearch(w io.Writer, projectID, companyName string, categories []string) (*talent.SearchJobsResponse, error) {
@@ -86,12 +86,12 @@ func categoryFilterSearch(w io.Writer, projectID, companyName string, categories
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	jobQuery := &talent.JobQuery{
@@ -120,7 +120,7 @@ func categoryFilterSearch(w io.Writer, projectID, companyName string, categories
 	}
 	resp, err := service.Projects.Jobs.Search(parent, req).Do()
 	if err != nil {
-		return nil, fmt.Errorf("failed to search for jobs with categories %v: %v", categories, err)
+		return nil, fmt.Errorf("failed to search for jobs with categories %v: %w", categories, err)
 	}
 
 	fmt.Fprintln(w, "Jobs:")
@@ -131,9 +131,9 @@ func categoryFilterSearch(w io.Writer, projectID, companyName string, categories
 	return resp, nil
 }
 
-// [END category_filter]
+// [END job_discovery_category_filter_search]
 
-// [START employment_types_filter]
+// [START job_discovery_employment_types_filter_search]
 
 // employmentTypesSearch searches for jobs on employment types.
 func employmentTypesSearch(w io.Writer, projectID, companyName string, employmentTypes []string) (*talent.SearchJobsResponse, error) {
@@ -141,12 +141,12 @@ func employmentTypesSearch(w io.Writer, projectID, companyName string, employmen
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	jobQuery := &talent.JobQuery{
@@ -175,7 +175,7 @@ func employmentTypesSearch(w io.Writer, projectID, companyName string, employmen
 	}
 	resp, err := service.Projects.Jobs.Search(parent, req).Do()
 	if err != nil {
-		return nil, fmt.Errorf("failed to search for jobs with employment types %v: %v", employmentTypes, err)
+		return nil, fmt.Errorf("failed to search for jobs with employment types %v: %w", employmentTypes, err)
 	}
 
 	fmt.Fprintln(w, "Jobs:")
@@ -186,11 +186,11 @@ func employmentTypesSearch(w io.Writer, projectID, companyName string, employmen
 	return resp, nil
 }
 
-// [END employment_types_filter]
+// [END job_discovery_employment_types_filter_search]
 
-// [START date_range_filter]
+// [START job_discovery_date_range_filter_search]
 
-///dateRangeSearch searches for jobs on date range.
+// /dateRangeSearch searches for jobs on date range.
 // In JSON format, the Timestamp type is encoded as a string in the
 // [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format. That is, the
 // format is "{year}-{month}-{day}T{hour}:{min}:{sec}[.{frac_sec}]Z"
@@ -200,12 +200,12 @@ func dateRangeSearch(w io.Writer, projectID, companyName, startTime, endTime str
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	jobQuery := &talent.JobQuery{
@@ -237,7 +237,7 @@ func dateRangeSearch(w io.Writer, projectID, companyName, startTime, endTime str
 	}
 	resp, err := service.Projects.Jobs.Search(parent, req).Do()
 	if err != nil {
-		return nil, fmt.Errorf("failed to search for jobs with date range [%s, %s]: %v", startTime, endTime, err)
+		return nil, fmt.Errorf("failed to search for jobs with date range [%s, %s]: %w", startTime, endTime, err)
 	}
 
 	fmt.Fprintln(w, "Jobs:")
@@ -248,9 +248,9 @@ func dateRangeSearch(w io.Writer, projectID, companyName, startTime, endTime str
 	return resp, nil
 }
 
-// [END date_range_filter]
+// [END job_discovery_date_range_filter_search]
 
-// [START language_code_filter]
+// [START job_discovery_language_code_filter_search]
 
 // languageCodeSearch searches for jobs on language code.
 func languageCodeSearch(w io.Writer, projectID, companyName string, languageCodes []string) (*talent.SearchJobsResponse, error) {
@@ -258,12 +258,12 @@ func languageCodeSearch(w io.Writer, projectID, companyName string, languageCode
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	jobQuery := &talent.JobQuery{
@@ -292,7 +292,7 @@ func languageCodeSearch(w io.Writer, projectID, companyName string, languageCode
 	}
 	resp, err := service.Projects.Jobs.Search(parent, req).Do()
 	if err != nil {
-		return nil, fmt.Errorf("failed to search for jobs with languange codes %v: %v", languageCodes, err)
+		return nil, fmt.Errorf("failed to search for jobs with languange codes %v: %w", languageCodes, err)
 	}
 
 	fmt.Fprintln(w, "Jobs:")
@@ -303,9 +303,9 @@ func languageCodeSearch(w io.Writer, projectID, companyName string, languageCode
 	return resp, nil
 }
 
-// [END language_code_filter]
+// [END job_discovery_language_code_filter_search]
 
-// [START company_display_name_filter]
+// [START job_discovery_company_display_name_search]
 
 // companyDisplayNameSearch searches for job on company display names.
 func companyDisplayNameSearch(w io.Writer, projectID, companyName string, companyDisplayNames []string) (*talent.SearchJobsResponse, error) {
@@ -313,12 +313,12 @@ func companyDisplayNameSearch(w io.Writer, projectID, companyName string, compan
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	jobQuery := &talent.JobQuery{
@@ -347,7 +347,7 @@ func companyDisplayNameSearch(w io.Writer, projectID, companyName string, compan
 	}
 	resp, err := service.Projects.Jobs.Search(parent, req).Do()
 	if err != nil {
-		return nil, fmt.Errorf("failed to search for jobs with company display names %v: %v", companyDisplayNames, err)
+		return nil, fmt.Errorf("failed to search for jobs with company display names %v: %w", companyDisplayNames, err)
 	}
 
 	fmt.Fprintln(w, "Jobs:")
@@ -358,9 +358,9 @@ func companyDisplayNameSearch(w io.Writer, projectID, companyName string, compan
 	return resp, nil
 }
 
-// [END company_display_name_filter]
+// [END job_discovery_company_display_name_search]
 
-// [START compensation_filter]
+// [START job_discovery_compensation_search]
 
 // compensationSearch searches for job on compensation.
 func compensationSearch(w io.Writer, projectID, companyName string) (*talent.SearchJobsResponse, error) {
@@ -368,12 +368,12 @@ func compensationSearch(w io.Writer, projectID, companyName string) (*talent.Sea
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	jobQuery := &talent.JobQuery{
@@ -416,7 +416,7 @@ func compensationSearch(w io.Writer, projectID, companyName string) (*talent.Sea
 	}
 	resp, err := service.Projects.Jobs.Search(parent, req).Do()
 	if err != nil {
-		return nil, fmt.Errorf("failed to search for jobs with compensation: %v", err)
+		return nil, fmt.Errorf("failed to search for jobs with compensation: %w", err)
 	}
 
 	fmt.Fprintln(w, "Jobs:")
@@ -427,4 +427,4 @@ func compensationSearch(w io.Writer, projectID, companyName string) (*talent.Sea
 	return resp, nil
 }
 
-// [END compensation_filter]
+// [END job_discovery_compensation_search]

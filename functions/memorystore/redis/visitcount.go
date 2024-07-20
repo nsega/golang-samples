@@ -25,10 +25,16 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 	"github.com/gomodule/redigo/redis"
 )
 
 var redisPool *redis.Pool
+
+func init() {
+	// Register the HTTP handler with the Functions Framework
+	functions.HTTP("VisitCount", visitCount)
+}
 
 // initializeRedis initializes and returns a connection pool
 func initializeRedis() (*redis.Pool, error) {
@@ -48,16 +54,16 @@ func initializeRedis() (*redis.Pool, error) {
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", redisAddr)
 			if err != nil {
-				return nil, fmt.Errorf("redis.Dial: %v", err)
+				return nil, fmt.Errorf("redis.Dial: %w", err)
 			}
 			return c, err
 		},
 	}, nil
 }
 
-// VisitCount increments the visit count on the Redis instance
+// visitCount increments the visit count on the Redis instance
 // and prints the current count in the HTTP response.
-func VisitCount(w http.ResponseWriter, r *http.Request) {
+func visitCount(w http.ResponseWriter, r *http.Request) {
 	// Initialize connection pool on first invocation
 	if redisPool == nil {
 		// Pre-declare err to avoid shadowing redisPool

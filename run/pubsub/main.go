@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// [START run_pubsub_server]
+// [START cloudrun_pubsub_server]
 
 // Sample run-pubsub is a Cloud Run service which handles Pub/Sub messages.
 package main
@@ -40,11 +40,13 @@ func main() {
 	}
 }
 
-// [END run_pubsub_server]
+// [END cloudrun_pubsub_server]
 
-// [START run_pubsub_handler]
+// [START cloudrun_pubsub_handler]
 
 // PubSubMessage is the payload of a Pub/Sub event.
+// See the documentation for more details:
+// https://cloud.google.com/pubsub/docs/reference/rest/v1/PubsubMessage
 type PubSubMessage struct {
 	Message struct {
 		Data []byte `json:"data,omitempty"`
@@ -62,6 +64,7 @@ func HelloPubSub(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
+	// byte slice unmarshalling handles base64 decoding.
 	if err := json.Unmarshal(body, &m); err != nil {
 		log.Printf("json.Unmarshal: %v", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -75,4 +78,4 @@ func HelloPubSub(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Hello %s!", name)
 }
 
-// [END run_pubsub_handler]
+// [END cloudrun_pubsub_handler]

@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"io"
 
-	servicedirectory "cloud.google.com/go/servicedirectory/apiv1beta1"
-	sdpb "google.golang.org/genproto/googleapis/cloud/servicedirectory/v1beta1"
+	servicedirectory "cloud.google.com/go/servicedirectory/apiv1"
+	sdpb "cloud.google.com/go/servicedirectory/apiv1/servicedirectorypb"
 )
 
 func createEndpoint(w io.Writer, projectID string) error {
@@ -35,7 +35,7 @@ func createEndpoint(w io.Writer, projectID string) error {
 	// Create a registration client.
 	client, err := servicedirectory.NewRegistrationClient(ctx)
 	if err != nil {
-		return fmt.Errorf("ServiceDirectory.NewRegistrationClient: %v", err)
+		return fmt.Errorf("ServiceDirectory.NewRegistrationClient: %w", err)
 	}
 
 	defer client.Close()
@@ -46,7 +46,7 @@ func createEndpoint(w io.Writer, projectID string) error {
 		Endpoint: &sdpb.Endpoint{
 			Address: "8.8.8.8",
 			Port:    8080,
-			Metadata: map[string]string{
+			Annotations: map[string]string{
 				"key1": "value1",
 				"key2": "value2",
 			},
@@ -54,7 +54,7 @@ func createEndpoint(w io.Writer, projectID string) error {
 	}
 	endpoint, err := client.CreateEndpoint(ctx, req)
 	if err != nil {
-		return fmt.Errorf("CreateEndpoint: %v", err)
+		return fmt.Errorf("CreateEndpoint: %w", err)
 	}
 	fmt.Fprintf(w, "servicedirectory.CreateEndpoint result: %s", endpoint.Name)
 	return nil

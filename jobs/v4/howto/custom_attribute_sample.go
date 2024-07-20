@@ -21,8 +21,8 @@ import (
 	"io"
 
 	talent "cloud.google.com/go/talent/apiv4beta1"
+	"cloud.google.com/go/talent/apiv4beta1/talentpb"
 	"github.com/gofrs/uuid"
-	talentpb "google.golang.org/genproto/googleapis/cloud/talent/v4beta1"
 	money "google.golang.org/genproto/googleapis/type/money"
 )
 
@@ -33,8 +33,9 @@ func createJobWithCustomAttributes(w io.Writer, projectID, companyID, jobTitle s
 	// Initialize a job service client.
 	c, err := talent.NewJobClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("talent.NewJobClient: %v", err)
+		return nil, fmt.Errorf("talent.NewJobClient: %w", err)
 	}
+	defer c.Close()
 
 	// requisitionID shoud be the unique ID in your system
 	requisitionID := fmt.Sprintf("job-with-custom-attribute-%s", uuid.Must(uuid.NewV4()).String())
@@ -84,7 +85,7 @@ func createJobWithCustomAttributes(w io.Writer, projectID, companyID, jobTitle s
 
 	resp, err := c.CreateJob(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateJob: %v", err)
+		return nil, fmt.Errorf("CreateJob: %w", err)
 	}
 
 	fmt.Fprintf(w, "Created job with custom attributres: %q\n", resp.GetName())

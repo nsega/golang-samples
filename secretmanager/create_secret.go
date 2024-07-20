@@ -21,7 +21,7 @@ import (
 	"io"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 )
 
 // createSecret creates a new secret with the given name. A secret is a logical
@@ -35,8 +35,9 @@ func createSecret(w io.Writer, parent, id string) error {
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create secretmanager client: %v", err)
+		return fmt.Errorf("failed to create secretmanager client: %w", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &secretmanagerpb.CreateSecretRequest{
@@ -54,7 +55,7 @@ func createSecret(w io.Writer, parent, id string) error {
 	// Call the API.
 	result, err := client.CreateSecret(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to create secret: %v", err)
+		return fmt.Errorf("failed to create secret: %w", err)
 	}
 	fmt.Fprintf(w, "Created secret: %s\n", result.Name)
 	return nil

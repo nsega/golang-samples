@@ -21,7 +21,7 @@ import (
 	"io"
 
 	dlp "cloud.google.com/go/dlp/apiv2"
-	dlppb "google.golang.org/genproto/googleapis/privacy/dlp/v2"
+	"cloud.google.com/go/dlp/apiv2/dlppb"
 )
 
 // deleteInspectTemplate deletes the given template.
@@ -33,15 +33,16 @@ func deleteInspectTemplate(w io.Writer, templateID string) error {
 
 	client, err := dlp.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("dlp.NewClient: %v", err)
+		return fmt.Errorf("dlp.NewClient: %w", err)
 	}
+	defer client.Close()
 
 	req := &dlppb.DeleteInspectTemplateRequest{
 		Name: templateID,
 	}
 
 	if err := client.DeleteInspectTemplate(ctx, req); err != nil {
-		return fmt.Errorf("DeleteInspectTemplate: %v", err)
+		return fmt.Errorf("DeleteInspectTemplate: %w", err)
 	}
 	fmt.Fprintf(w, "Successfully deleted inspect template %v", templateID)
 	return nil

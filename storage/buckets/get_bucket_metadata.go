@@ -34,7 +34,7 @@ func getBucketMetadata(w io.Writer, bucketName string) (*storage.BucketAttrs, er
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("storage.NewClient: %v", err)
+		return nil, fmt.Errorf("storage.NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -42,12 +42,13 @@ func getBucketMetadata(w io.Writer, bucketName string) (*storage.BucketAttrs, er
 	defer cancel()
 	attrs, err := client.Bucket(bucketName).Attrs(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Bucket(%q).Attrs: %v", bucketName, err)
+		return nil, fmt.Errorf("Bucket(%q).Attrs: %w", bucketName, err)
 	}
 	fmt.Fprintf(w, "BucketName: %v\n", attrs.Name)
 	fmt.Fprintf(w, "Location: %v\n", attrs.Location)
 	fmt.Fprintf(w, "LocationType: %v\n", attrs.LocationType)
 	fmt.Fprintf(w, "StorageClass: %v\n", attrs.StorageClass)
+	fmt.Fprintf(w, "Turbo replication (RPO): %v\n", attrs.RPO)
 	fmt.Fprintf(w, "TimeCreated: %v\n", attrs.Created)
 	fmt.Fprintf(w, "Metageneration: %v\n", attrs.MetaGeneration)
 	fmt.Fprintf(w, "PredefinedACL: %v\n", attrs.PredefinedACL)
@@ -64,11 +65,21 @@ func getBucketMetadata(w io.Writer, bucketName string) (*storage.BucketAttrs, er
 		fmt.Fprintf(w, "RetentionPeriod: %v\n", attrs.RetentionPolicy.RetentionPeriod)
 		fmt.Fprintf(w, "RetentionPolicyIsLocked: %v\n", attrs.RetentionPolicy.IsLocked)
 	}
+	fmt.Fprintf(w, "ObjectRetentionMode: %v\n", attrs.ObjectRetentionMode)
 	fmt.Fprintf(w, "RequesterPays: %v\n", attrs.RequesterPays)
 	fmt.Fprintf(w, "VersioningEnabled: %v\n", attrs.VersioningEnabled)
 	if attrs.Logging != nil {
 		fmt.Fprintf(w, "LogBucket: %v\n", attrs.Logging.LogBucket)
 		fmt.Fprintf(w, "LogObjectPrefix: %v\n", attrs.Logging.LogObjectPrefix)
+	}
+	if attrs.CORS != nil {
+		fmt.Fprintln(w, "CORS:")
+		for _, v := range attrs.CORS {
+			fmt.Fprintf(w, "\tMaxAge: %v\n", v.MaxAge)
+			fmt.Fprintf(w, "\tMethods: %v\n", v.Methods)
+			fmt.Fprintf(w, "\tOrigins: %v\n", v.Origins)
+			fmt.Fprintf(w, "\tResponseHeaders: %v\n", v.ResponseHeaders)
+		}
 	}
 	if attrs.Labels != nil {
 		fmt.Fprintf(w, "\n\n\nLabels:")

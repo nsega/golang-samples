@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // [START functions_tips_lazy_globals]
-// [START run_tips_global_lazy]
+// [START cloudrun_tips_global_lazy]
 
 // Package tips contains tips for writing Cloud Functions in Go.
 package tips
@@ -25,11 +25,16 @@ import (
 	"sync"
 
 	"cloud.google.com/go/storage"
+	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
 // client is lazily initialized by LazyGlobal.
 var client *storage.Client
 var clientOnce sync.Once
+
+func init() {
+	functions.HTTP("LazyGlobal", LazyGlobal)
+}
 
 // LazyGlobal is an example of lazily initializing a Google Cloud Storage client.
 func LazyGlobal(w http.ResponseWriter, r *http.Request) {
@@ -48,5 +53,5 @@ func LazyGlobal(w http.ResponseWriter, r *http.Request) {
 	// Use client.
 }
 
-// [END run_tips_global_lazy]
+// [END cloudrun_tips_global_lazy]
 // [END functions_tips_lazy_globals]

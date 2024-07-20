@@ -27,8 +27,7 @@ import (
 
 // Creates a Cloud Spanner table comprised of columns for each supported data type
 // See https://cloud.google.com/spanner/docs/data-types
-func createTableWithDatatypes(w io.Writer, db string) error {
-	ctx := context.Background()
+func createTableWithDatatypes(ctx context.Context, w io.Writer, db string) error {
 	adminClient, err := database.NewDatabaseAdminClient(ctx)
 	if err != nil {
 		return err
@@ -47,12 +46,13 @@ func createTableWithDatatypes(w io.Writer, db string) error {
 				LastContactDate DATE,
 				OutdoorVenue BOOL,
 				PopularityScore FLOAT64,
+				Revenue NUMERIC,
 				LastUpdateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true)
 			) PRIMARY KEY (VenueId)`,
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("UpdateDatabaseDdl: %v", err)
+		return fmt.Errorf("UpdateDatabaseDdl: %w", err)
 	}
 	if err := op.Wait(ctx); err != nil {
 		return err

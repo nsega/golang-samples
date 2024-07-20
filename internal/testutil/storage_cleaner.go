@@ -16,46 +16,58 @@ package testutil
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"strings"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/google/uuid"
 	"google.golang.org/api/iterator"
 )
 
-// CleanBucket creates a new bucket. If the bucket already exists, it will be
-// deleted and recreated.
-func CleanBucket(ctx context.Context, t *testing.T, projectID, bucket string) error {
+// TestBucket creates a new bucket with the given prefix and registers a cleanup
+// function to delete the bucket and any objects it contains when the test finishes.
+// TestBucket returns the bucket name. It fails the test if bucket creation fails.
+func TestBucket(ctx context.Context, t *testing.T, projectID, prefix string) string {
 	t.Helper()
 
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		t.Fatalf("storage.NewClient: %v", err)
 	}
-
-	// Delete the bucket if it exists.
-	deleteBucketIfExists(ctx, t, client, bucket)
-
-	b := client.Bucket(bucket)
-
-	// Now create the bucket.
-	// Retry because the bucket can take time to fully delete.
-	Retry(t, 10, 10*time.Second, func(r *R) {
-		if err := b.Create(ctx, projectID, nil); err != nil {
-			r.Errorf("Bucket.Create(%q): %v", bucket, err)
-		}
-	})
-	return nil
+	t.Cleanup(func() { client.Close() })
+	return CreateTestBucket(ctx, t, client, projectID, prefix)
 }
 
-func deleteBucketIfExists(ctx context.Context, t *testing.T, client *storage.Client, bucket string) {
+// CreateTestBucket creates a new bucket with the given prefix and registers a
+// cleanup function to delete the bucket and any objects it contains.
+// It is equivalent to TestBucket but allows Storage Client re-use.
+func CreateTestBucket(ctx context.Context, t *testing.T, client *storage.Client, projectID, prefix string) string {
 	t.Helper()
+	bucketName := UniqueBucketName(prefix)
 
+	b := client.Bucket(bucketName)
+	if err := b.Create(ctx, projectID, nil); err != nil {
+		t.Fatalf("Bucket.Create(%q): %v", bucketName, err)
+	}
+
+	t.Cleanup(func() {
+		if err := DeleteBucketIfExists(ctx, client, bucketName); err != nil {
+			log.Printf("Bucket.Delete(%q): %v", bucketName, err)
+		}
+	})
+	return bucketName
+}
+
+// DeleteBucketIfExists deletes a bucket and all its objects.
+func DeleteBucketIfExists(ctx context.Context, client *storage.Client, bucket string) error {
 	b := client.Bucket(bucket)
 
 	// Check if the bucket does not exist, return nil.
 	if _, err := b.Attrs(ctx); err != nil {
-		return
+		return nil
 	}
 
 	// Delete all of the elements in the already existent bucket, including noncurrent objects.
@@ -69,25 +81,80 @@ func deleteBucketIfExists(ctx context.Context, t *testing.T, client *storage.Cli
 			break
 		}
 		if err != nil {
-			t.Errorf("Bucket.Objects(%q): %v", bucket, err)
+			return fmt.Errorf("Bucket.Objects(%q): %v", bucket, err)
 		}
+		obj := b.Object(attrs.Name)
+		// Objects with a hold must have the hold released
 		if attrs.EventBasedHold || attrs.TemporaryHold {
-			if _, err := b.Object(attrs.Name).Update(ctx, storage.ObjectAttrsToUpdate{
+			if _, err := obj.Update(ctx, storage.ObjectAttrsToUpdate{
 				TemporaryHold:  false,
 				EventBasedHold: false,
 			}); err != nil {
-				t.Errorf("Bucket(%q).Object(%q).Update: %v", bucket, attrs.Name, err)
+				return fmt.Errorf("Bucket(%q).Object(%q).Update: %v", bucket, attrs.Name, err)
 			}
 		}
-		obj := b.Object(attrs.Name).Generation(attrs.Generation)
-		if err := obj.Delete(ctx); err != nil {
-			t.Errorf("Bucket(%q).Object(%q).Delete: %v", bucket, attrs.Name, err)
+		// Objects with a retention policy must must have the policy removed.
+		if attrs.Retention != nil {
+			_, err = obj.OverrideUnlockedRetention(true).Update(ctx, storage.ObjectAttrsToUpdate{
+				Retention: &storage.ObjectRetention{},
+			})
+			if err != nil {
+				return fmt.Errorf("failed to remove retention from object(%q): %v", attrs.Name, err)
+			}
 		}
 
+		if err := obj.Generation(attrs.Generation).Delete(ctx); err != nil {
+			return fmt.Errorf("Bucket(%q).Object(%q).Delete: %v", bucket, attrs.Name, err)
+		}
 	}
 
 	// Then delete the bucket itself.
 	if err := b.Delete(ctx); err != nil {
-		t.Errorf("Bucket.Delete(%q): %v", bucket, err)
+		return fmt.Errorf("Bucket.Delete(%q): %v", bucket, err)
 	}
+
+	// Waits for a bucket to no longer exist, as it can take time to propagate
+	// Errors after 10 successful attempts at retrieving the bucket's attrs
+	retries := 10
+	delay := 10 * time.Second
+
+	for i := 0; i < retries; i++ {
+		if _, err := b.Attrs(ctx); err != nil {
+			// Deletion successful.
+			return nil
+		}
+		// Deletion not complete.
+		time.Sleep(delay)
+	}
+
+	return fmt.Errorf("failed to delete bucket %q", bucket)
+}
+
+// UniqueBucketName returns a unique name with the test prefix.
+func UniqueBucketName(prefix string) string {
+	return strings.Join([]string{prefix, uuid.New().String()}, "-")
+}
+
+// DeleteExpiredBuckets deletes old testing buckets that weren't cleaned previously.
+func DeleteExpiredBuckets(client *storage.Client, projectID, prefix string, expireAge time.Duration) error {
+	ctx := context.Background()
+
+	it := client.Buckets(ctx, projectID)
+	it.Prefix = prefix
+	for {
+		bktAttrs, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if time.Since(bktAttrs.Created) > expireAge {
+			log.Printf("deleting bucket %q, which is more than %s old", bktAttrs.Name, expireAge)
+			if err := DeleteBucketIfExists(ctx, client, bktAttrs.Name); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

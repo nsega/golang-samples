@@ -15,49 +15,24 @@
 package redact
 
 import (
-	"bytes"
-	"strings"
-	"testing"
-
-	"github.com/GoogleCloudPlatform/golang-samples/internal/testutil"
-	dlppb "google.golang.org/genproto/googleapis/privacy/dlp/v2"
+	"crypto/md5"
+	"encoding/hex"
+	"io"
+	"os"
 )
 
-func TestRedactImage(t *testing.T) {
-	tc := testutil.SystemTest(t)
-	tests := []struct {
-		name      string
-		inputPath string
-		bt        dlppb.ByteContentItem_BytesType
-		infoTypes []string
-		want      string
-	}{
-		{
-			name:      "image with one type",
-			inputPath: "testdata/ok.png",
-			bt:        dlppb.ByteContentItem_IMAGE_PNG,
-			infoTypes: []string{"US_SOCIAL_SECURITY_NUMBER"},
-			want:      "Wrote output to",
-		},
-		{
-			name:      "image with two types",
-			inputPath: "testdata/ok.png",
-			bt:        dlppb.ByteContentItem_IMAGE_PNG,
-			infoTypes: []string{"US_SOCIAL_SECURITY_NUMBER", "DATE"},
-			want:      "Wrote output to",
-		},
+func calculateImageHash(filename string) (string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", err
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			buf := new(bytes.Buffer)
-			// TODO: output to a Writer or bytes rather than to a file on disk.
-			if err := redactImage(buf, tc.ProjectID, test.infoTypes, test.bt, test.inputPath, "testdata/test_output.png"); err != nil {
-				t.Errorf("redactImage: %v", err)
-			}
-			if got := buf.String(); !strings.Contains(got, test.want) {
-				t.Errorf("redactImage(%s) got %q, want substring %q", test.name, got, test.want)
-			}
-		})
+	defer file.Close()
+
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
 	}
+
+	hashSum := hash.Sum(nil)
+	return hex.EncodeToString(hashSum), nil
 }

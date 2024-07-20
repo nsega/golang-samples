@@ -21,7 +21,7 @@ import (
 	"io"
 
 	talent "cloud.google.com/go/talent/apiv4beta1"
-	talentpb "google.golang.org/genproto/googleapis/cloud/talent/v4beta1"
+	"cloud.google.com/go/talent/apiv4beta1/talentpb"
 )
 
 // batchDeleteJobs deletes existing jobs by a filter.
@@ -31,8 +31,9 @@ func batchDeleteJobs(w io.Writer, projectID, companyID, requisitionID string) er
 	// Initialize a jobService client.
 	c, err := talent.NewJobClient(ctx)
 	if err != nil {
-		return fmt.Errorf("talent.NewJobClient: %v", err)
+		return fmt.Errorf("talent.NewJobClient: %w", err)
 	}
+	defer c.Close()
 
 	companyName := fmt.Sprintf("projects/%s/companies/%s", projectID, companyID)
 	filter := fmt.Sprintf("companyName=%q AND requisitionId=%q", companyName, requisitionID)
@@ -45,7 +46,7 @@ func batchDeleteJobs(w io.Writer, projectID, companyID, requisitionID string) er
 	}
 
 	if err := c.BatchDeleteJobs(ctx, req); err != nil {
-		return fmt.Errorf("BatchDeleteJobs(%s): %v", filter, err)
+		return fmt.Errorf("BatchDeleteJobs(%s): %w", filter, err)
 	}
 
 	fmt.Fprintf(w, "Batch deleted jobs from %s\n", filter)

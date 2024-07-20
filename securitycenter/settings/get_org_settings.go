@@ -14,14 +14,14 @@
 
 package settings
 
-// [START get_org_settings]
+// [START securitycenter_get_org_settings]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 )
 
 // getOrgSettings gets and prints the current organization asset discovery
@@ -32,7 +32,7 @@ func getOrgSettings(w io.Writer, orgID string) error {
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 
@@ -41,11 +41,11 @@ func getOrgSettings(w io.Writer, orgID string) error {
 	}
 	settings, err := client.GetOrganizationSettings(ctx, req)
 	if err != nil {
-		return fmt.Errorf("GetOrganizationSettings: %v", err)
+		return fmt.Errorf("GetOrganizationSettings: %w", err)
 	}
 	fmt.Fprintf(w, "Retrieved Settings for: %s\n", settings.Name)
 	fmt.Fprintf(w, "Asset Discovery on? %v", settings.EnableAssetDiscovery)
 	return nil
 }
 
-// [END get_org_settings]
+// [END securitycenter_get_org_settings]

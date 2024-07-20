@@ -14,16 +14,16 @@
 
 // Command cleaneversions deletes App Engine versions for a given project, service and/or version ID filter.
 //
-//  Usage of cleanaeversions:
-//    -async
-//        Don't wait for successful deletion.
-//    -filter regexp
-//        Filter regexp for version IDs. If empty, attempts to clean all versions.
-//    -n  Dry run.
-//    -project Project ID
-//        Project ID to clean.
-//    -service Service/module ID
-//        Service/module ID to clean. If omitted, cleans all services.
+//	Usage of cleanaeversions:
+//	  -async
+//	      Don't wait for successful deletion.
+//	  -filter regexp
+//	      Filter regexp for version IDs. If empty, attempts to clean all versions.
+//	  -n  Dry run.
+//	  -project Project ID
+//	      Project ID to clean.
+//	  -service Service/module ID
+//	      Service/module ID to clean. If omitted, cleans all services.
 package main
 
 import (
@@ -70,7 +70,7 @@ func main() {
 
 	filterRE, err := regexp.Compile(*filter)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Filter is not a valid regexp: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Filter is not a valid regexp: %v", err)
 		os.Exit(2)
 	}
 	_ = filterRE
@@ -78,12 +78,12 @@ func main() {
 	ctx := context.Background()
 	hc, err := google.DefaultClient(ctx, appengine.CloudPlatformScope)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not create DefaultClient: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Could not create DefaultClient: %v", err)
 		os.Exit(1)
 	}
 	gae, err = appengine.New(hc)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not create App Engine service: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Could not create App Engine service: %v", err)
 		os.Exit(1)
 	}
 
@@ -97,7 +97,7 @@ func main() {
 			}
 			return nil
 		}); err != nil {
-			fmt.Fprintf(os.Stderr, "Could not list App Engine services: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Could not list App Engine services: %v", err)
 			os.Exit(1)
 		}
 	}

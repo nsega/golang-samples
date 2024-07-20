@@ -24,9 +24,9 @@ import (
 	"time"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"github.com/GoogleCloudPlatform/golang-samples/internal/testutil"
 	"github.com/google/uuid"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
 )
 
 func orgID(t *testing.T) string {
@@ -69,7 +69,7 @@ func addNotificationConfig(t *testing.T, notificationConfigID string) error {
 	client, err := securitycenter.NewClient(ctx)
 
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -89,7 +89,7 @@ func addNotificationConfig(t *testing.T, notificationConfigID string) error {
 
 	_, err0 := client.CreateNotificationConfig(ctx, req)
 	if err0 != nil {
-		return fmt.Errorf("Failed to create notification config: %v", err0)
+		return fmt.Errorf("Failed to create notification config: %w", err0)
 	}
 
 	return nil
@@ -102,7 +102,7 @@ func cleanupNotificationConfig(t *testing.T, notificationConfigID string) error 
 	client, err := securitycenter.NewClient(ctx)
 
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -112,14 +112,14 @@ func cleanupNotificationConfig(t *testing.T, notificationConfigID string) error 
 	}
 
 	if err = client.DeleteNotificationConfig(ctx, req); err != nil {
-		return fmt.Errorf("Failed to retrieve notification config: %v", err)
+		return fmt.Errorf("Failed to retrieve notification config: %w", err)
 	}
 
 	return nil
 }
 
 func TestCreateNotificationConfig(t *testing.T) {
-	testutil.Retry(t, 5, 5*time.Second, func(r *testutil.R) {
+	testutil.Retry(t, 5, 30*time.Second, func(r *testutil.R) {
 		buf := new(bytes.Buffer)
 		rand, err := uuid.NewUUID()
 		if err != nil {
@@ -142,7 +142,7 @@ func TestCreateNotificationConfig(t *testing.T) {
 }
 
 func TestDeleteNotificationConfig(t *testing.T) {
-	testutil.Retry(t, 5, 5*time.Second, func(r *testutil.R) {
+	testutil.Retry(t, 5, 30*time.Second, func(r *testutil.R) {
 		buf := new(bytes.Buffer)
 		rand, err := uuid.NewUUID()
 		if err != nil {
@@ -168,7 +168,7 @@ func TestDeleteNotificationConfig(t *testing.T) {
 }
 
 func TestGetNotificationConfig(t *testing.T) {
-	testutil.Retry(t, 5, 5*time.Second, func(r *testutil.R) {
+	testutil.Retry(t, 5, 30*time.Second, func(r *testutil.R) {
 		buf := new(bytes.Buffer)
 		rand, err := uuid.NewUUID()
 		if err != nil {
@@ -196,7 +196,7 @@ func TestGetNotificationConfig(t *testing.T) {
 }
 
 func TestListNotificationConfigs(t *testing.T) {
-	testutil.Retry(t, 5, 5*time.Second, func(r *testutil.R) {
+	testutil.Retry(t, 5, 30*time.Second, func(r *testutil.R) {
 		buf := new(bytes.Buffer)
 		rand, err := uuid.NewUUID()
 		if err != nil {
@@ -224,7 +224,7 @@ func TestListNotificationConfigs(t *testing.T) {
 }
 
 func TestUpdateNotificationConfig(t *testing.T) {
-	testutil.Retry(t, 5, 5*time.Second, func(r *testutil.R) {
+	testutil.Retry(t, 5, 30*time.Second, func(r *testutil.R) {
 		buf := new(bytes.Buffer)
 		rand, err := uuid.NewUUID()
 		if err != nil {
@@ -251,7 +251,7 @@ func TestUpdateNotificationConfig(t *testing.T) {
 }
 
 func TestReceiveNotifications(t *testing.T) {
-	testutil.Retry(t, 5, 5*time.Second, func(r *testutil.R) {
+	testutil.Retry(t, 5, 30*time.Second, func(r *testutil.R) {
 		buf := new(bytes.Buffer)
 		if err := receiveMessages(buf, projectID(t), pubsubSubscription(t)); err != nil {
 			r.Errorf("receiveNotifications failed: %v", err)

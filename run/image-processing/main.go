@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// [START run_imageproc_controller]
+// [START cloudrun_imageproc_controller]
 
 // Sample image-processing is a Cloud Run service which performs asynchronous processing on images.
 package main
@@ -42,6 +42,8 @@ func main() {
 }
 
 // PubSubMessage is the payload of a Pub/Sub event.
+// See the documentation for more details:
+// https://cloud.google.com/pubsub/docs/reference/rest/v1/PubsubMessage
 type PubSubMessage struct {
 	Message struct {
 		Data []byte `json:"data,omitempty"`
@@ -84,4 +86,4 @@ func HelloPubSub(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// [END run_imageproc_controller]
+// [END cloudrun_imageproc_controller]

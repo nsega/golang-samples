@@ -24,6 +24,8 @@ import (
 
 	"cloud.google.com/go/bigtable"
 	"github.com/GoogleCloudPlatform/golang-samples/internal/testutil"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestWrites(t *testing.T) {
@@ -36,12 +38,20 @@ func TestWrites(t *testing.T) {
 		t.Skip("Skipping bigtable integration test. Set GOLANG_SAMPLES_BIGTABLE_PROJECT and GOLANG_SAMPLES_BIGTABLE_INSTANCE.")
 	}
 	adminClient, err := bigtable.NewAdminClient(ctx, project, instance)
+	if err != nil {
+		t.Skipf("bigtable.NewAdminClient: %v", err)
+	}
 
 	tableName := "mobile-time-series-" + tc.ProjectID
 	adminClient.DeleteTable(ctx, tableName)
 
 	testutil.Retry(t, 10, 10*time.Second, func(r *testutil.R) {
 		if err := adminClient.CreateTable(ctx, tableName); err != nil {
+			// Just in case the table exists, try to delete it again.
+			if status.Code(err) == codes.AlreadyExists {
+				adminClient.DeleteTable(ctx, tableName)
+				time.Sleep(5 * time.Second)
+			}
 			r.Errorf("Could not create table %s: %v", tableName, err)
 		}
 	})
@@ -51,6 +61,21 @@ func TestWrites(t *testing.T) {
 
 	columnFamilyName := "stats_summary"
 	if err := adminClient.CreateColumnFamily(ctx, tableName, columnFamilyName); err != nil {
+		adminClient.DeleteTable(ctx, tableName)
+		t.Fatalf("CreateColumnFamily(%s): %v", columnFamilyName, err)
+	}
+
+	columnFamilyName = "view_count"
+	if err = adminClient.CreateColumnFamilyWithConfig(
+		ctx,
+		tableName,
+		columnFamilyName,
+		bigtable.Family{
+			ValueType: bigtable.AggregateType{
+				Input:      bigtable.Int64Type{},
+				Aggregator: bigtable.SumAggregator{},
+			},
+		}); err != nil {
 		adminClient.DeleteTable(ctx, tableName)
 		t.Fatalf("CreateColumnFamily(%s): %v", columnFamilyName, err)
 	}
@@ -80,6 +105,11 @@ func TestWrites(t *testing.T) {
 
 	if got, want := buf.String(), "Successfully updated row"; !strings.Contains(got, want) {
 		t.Errorf("got %q, want %q", got, want)
+	}
+
+	buf.Reset()
+	if err = writeAggregate(buf, project, instance, tableName); err != nil {
+		t.Errorf("TestWriteAggregate: %v", err)
 	}
 
 	buf.Reset()

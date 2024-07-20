@@ -30,3 +30,11 @@
 # Editors
 .idea/*
 
+**/sponge_log.log
+
+testing/kokoro/test-env.sh
+.envrc
+.DS_Store
+go.work
+go.work.sum
+sponge_log.xml

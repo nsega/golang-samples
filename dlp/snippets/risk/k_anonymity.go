@@ -23,8 +23,8 @@ import (
 	"time"
 
 	dlp "cloud.google.com/go/dlp/apiv2"
+	"cloud.google.com/go/dlp/apiv2/dlppb"
 	"cloud.google.com/go/pubsub"
-	dlppb "google.golang.org/genproto/googleapis/privacy/dlp/v2"
 )
 
 // riskKAnonymity computes the risk of the given columns using K Anonymity.
@@ -39,20 +39,39 @@ func riskKAnonymity(w io.Writer, projectID, dataProject, pubSubTopic, pubSubSub,
 	ctx := context.Background()
 	client, err := dlp.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("dlp.NewClient: %v", err)
+		return fmt.Errorf("dlp.NewClient: %w", err)
 	}
 
 	// Create a PubSub Client used to listen for when the inspect job finishes.
 	pubsubClient, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
-		return fmt.Errorf("Error creating PubSub client: %v", err)
+		return err
 	}
 	defer pubsubClient.Close()
 
 	// Create a PubSub subscription we can use to listen for messages.
-	s, err := setupPubSub(projectID, pubSubTopic, pubSubSub)
+	// Create the Topic if it doesn't exist.
+	t := pubsubClient.Topic(pubSubTopic)
+	topicExists, err := t.Exists(ctx)
 	if err != nil {
-		return fmt.Errorf("setupPubSub: %v", err)
+		return err
+	}
+	if !topicExists {
+		if t, err = pubsubClient.CreateTopic(ctx, pubSubTopic); err != nil {
+			return err
+		}
+	}
+
+	// Create the Subscription if it doesn't exist.
+	s := pubsubClient.Subscription(pubSubSub)
+	subExists, err := s.Exists(ctx)
+	if err != nil {
+		return err
+	}
+	if !subExists {
+		if s, err = pubsubClient.CreateSubscription(ctx, pubSubSub, pubsub.SubscriptionConfig{Topic: t}); err != nil {
+			return err
+		}
 	}
 
 	// topic is the PubSub topic string where messages should be sent.
@@ -99,7 +118,7 @@ func riskKAnonymity(w io.Writer, projectID, dataProject, pubSubTopic, pubSubSub,
 	// Create the risk job.
 	j, err := client.CreateDlpJob(ctx, req)
 	if err != nil {
-		return fmt.Errorf("CreateDlpJob: %v", err)
+		return fmt.Errorf("CreateDlpJob: %w", err)
 	}
 	fmt.Fprintf(w, "Created job: %v\n", j.GetName())
 
@@ -141,7 +160,7 @@ func riskKAnonymity(w io.Writer, projectID, dataProject, pubSubTopic, pubSubSub,
 		cancel()
 	})
 	if err != nil {
-		return fmt.Errorf("Receive: %v", err)
+		return fmt.Errorf("Receive: %w", err)
 	}
 	return nil
 }

@@ -20,8 +20,8 @@ import (
 	"io"
 
 	video "cloud.google.com/go/videointelligence/apiv1"
+	videopb "cloud.google.com/go/videointelligence/apiv1/videointelligencepb"
 	"github.com/golang/protobuf/ptypes"
-	videopb "google.golang.org/genproto/googleapis/cloud/videointelligence/v1"
 )
 
 // [START video_analyze_labels_gcs]
@@ -30,8 +30,9 @@ func labelURI(w io.Writer, file string) error {
 	ctx := context.Background()
 	client, err := video.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("video.NewClient: %v", err)
+		return fmt.Errorf("video.NewClient: %w", err)
 	}
+	defer client.Close()
 
 	op, err := client.AnnotateVideo(ctx, &videopb.AnnotateVideoRequest{
 		Features: []videopb.Feature{
@@ -40,12 +41,12 @@ func labelURI(w io.Writer, file string) error {
 		InputUri: file,
 	})
 	if err != nil {
-		return fmt.Errorf("AnnotateVideo: %v", err)
+		return fmt.Errorf("AnnotateVideo: %w", err)
 	}
 
 	resp, err := op.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("Wait: %v", err)
+		return fmt.Errorf("Wait: %w", err)
 	}
 
 	printLabels := func(labels []*videopb.LabelAnnotation) {
@@ -85,6 +86,7 @@ func shotChangeURI(w io.Writer, file string) error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	op, err := client.AnnotateVideo(ctx, &videopb.AnnotateVideoRequest{
 		Features: []videopb.Feature{
@@ -123,6 +125,7 @@ func explicitContentURI(w io.Writer, file string) error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	op, err := client.AnnotateVideo(ctx, &videopb.AnnotateVideoRequest{
 		Features: []videopb.Feature{
@@ -151,7 +154,7 @@ func explicitContentURI(w io.Writer, file string) error {
 
 // [END video_analyze_explicit_content]
 
-// [START video_analyze_speech_transcription_gcs]
+// [START video_speech_transcription_gcs]
 
 func speechTranscriptionURI(w io.Writer, file string) error {
 	ctx := context.Background()
@@ -159,6 +162,7 @@ func speechTranscriptionURI(w io.Writer, file string) error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	op, err := client.AnnotateVideo(ctx, &videopb.AnnotateVideoRequest{
 		Features: []videopb.Feature{
@@ -209,4 +213,4 @@ func speechTranscriptionURI(w io.Writer, file string) error {
 	return nil
 }
 
-// [END video_analyze_speech_transcription_gcs]
+// [END video_speech_transcription_gcs]

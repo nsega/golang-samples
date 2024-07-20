@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
-	servicedirectory "cloud.google.com/go/servicedirectory/apiv1beta1"
-	sdpb "google.golang.org/genproto/googleapis/cloud/servicedirectory/v1beta1"
+	servicedirectory "cloud.google.com/go/servicedirectory/apiv1"
+	sdpb "cloud.google.com/go/servicedirectory/apiv1/servicedirectorypb"
 )
 
 func deleteService(projectID string) error {
@@ -33,7 +33,7 @@ func deleteService(projectID string) error {
 	// Create a registration client.
 	client, err := servicedirectory.NewRegistrationClient(ctx)
 	if err != nil {
-		return fmt.Errorf("ServiceDirectory.NewRegistrationClient: %v", err)
+		return fmt.Errorf("ServiceDirectory.NewRegistrationClient: %w", err)
 	}
 
 	defer client.Close()
@@ -42,7 +42,7 @@ func deleteService(projectID string) error {
 		Name: fmt.Sprintf("projects/%s/locations/%s/namespaces/%s/services/%s", projectID, location, namespaceID, serviceID),
 	}
 	if err := client.DeleteService(ctx, req); err != nil {
-		return fmt.Errorf("DeleteService: %v", err)
+		return fmt.Errorf("DeleteService: %w", err)
 	}
 	return nil
 }

@@ -23,8 +23,8 @@ import (
 	"io"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3"
+	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"google.golang.org/api/iterator"
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 )
 
 // listMetrics lists all the metrics available to be monitored in the API.
@@ -34,6 +34,7 @@ func listMetrics(w io.Writer, projectID string) error {
 	if err != nil {
 		return err
 	}
+	defer c.Close()
 
 	req := &monitoringpb.ListMetricDescriptorsRequest{
 		Name: "projects/" + projectID,
@@ -46,7 +47,7 @@ func listMetrics(w io.Writer, projectID string) error {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("Could not list metrics: %v", err)
+			return fmt.Errorf("Could not list metrics: %w", err)
 		}
 		fmt.Fprintf(w, "%v\n", resp.GetType())
 	}

@@ -19,9 +19,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // createKeyHSM creates a new symmetric encrypt/decrypt key on Cloud KMS.
@@ -33,8 +35,9 @@ func createKeyHSM(w io.Writer, parent, id string) error {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create kms client: %v", err)
+		return fmt.Errorf("failed to create kms client: %w", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &kmspb.CreateCryptoKeyRequest{
@@ -46,13 +49,16 @@ func createKeyHSM(w io.Writer, parent, id string) error {
 				ProtectionLevel: kmspb.ProtectionLevel_HSM,
 				Algorithm:       kmspb.CryptoKeyVersion_GOOGLE_SYMMETRIC_ENCRYPTION,
 			},
+
+			// Optional: customize how long key versions should be kept before destroying.
+			DestroyScheduledDuration: durationpb.New(24 * time.Hour),
 		},
 	}
 
 	// Call the API.
 	result, err := client.CreateCryptoKey(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to create key: %v", err)
+		return fmt.Errorf("failed to create key: %w", err)
 	}
 	fmt.Fprintf(w, "Created key: %s\n", result.Name)
 	return nil

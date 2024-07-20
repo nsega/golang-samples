@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"io"
 
-	servicedirectory "cloud.google.com/go/servicedirectory/apiv1beta1"
-	sdpb "google.golang.org/genproto/googleapis/cloud/servicedirectory/v1beta1"
+	servicedirectory "cloud.google.com/go/servicedirectory/apiv1"
+	sdpb "cloud.google.com/go/servicedirectory/apiv1/servicedirectorypb"
 )
 
 func resolveService(w io.Writer, projectID string) error {
@@ -34,7 +34,7 @@ func resolveService(w io.Writer, projectID string) error {
 	// Create a lookup client.
 	resolver, err := servicedirectory.NewLookupClient(ctx)
 	if err != nil {
-		return fmt.Errorf("ServiceDirectory.NewRegistrationClient: %v", err)
+		return fmt.Errorf("ServiceDirectory.NewLookupClient: %w", err)
 	}
 
 	defer resolver.Close()
@@ -44,7 +44,7 @@ func resolveService(w io.Writer, projectID string) error {
 	}
 	result, err := resolver.ResolveService(ctx, req)
 	if err != nil {
-		return fmt.Errorf("ResolveService: %v", err)
+		return fmt.Errorf("ResolveService: %w", err)
 	}
 
 	fmt.Fprintf(w, "Successfully Resolved Service %v\n", result)

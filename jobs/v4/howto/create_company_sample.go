@@ -21,7 +21,7 @@ import (
 	"io"
 
 	talent "cloud.google.com/go/talent/apiv4beta1"
-	talentpb "google.golang.org/genproto/googleapis/cloud/talent/v4beta1"
+	"cloud.google.com/go/talent/apiv4beta1/talentpb"
 )
 
 // createCompany creates a company as given.
@@ -31,8 +31,9 @@ func createCompany(w io.Writer, projectID, externalID, displayName string) (*tal
 	// Initializes a companyService client.
 	c, err := talent.NewCompanyClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("talent.NewCompanyClient: %v", err)
+		return nil, fmt.Errorf("talent.NewCompanyClient: %w", err)
 	}
+	defer c.Close()
 
 	// Construct a createCompany request.
 	req := &talentpb.CreateCompanyRequest{
@@ -45,7 +46,7 @@ func createCompany(w io.Writer, projectID, externalID, displayName string) (*tal
 
 	resp, err := c.CreateCompany(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("CreateCompany: %v", err)
+		return nil, fmt.Errorf("CreateCompany: %w", err)
 	}
 
 	fmt.Fprintf(w, "Created company: %q\n", resp.GetName())

@@ -32,20 +32,21 @@ func iamRevokeAccess(w io.Writer, name, member string) error {
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create secretmanager client: %v", err)
+		return fmt.Errorf("failed to create secretmanager client: %w", err)
 	}
+	defer client.Close()
 
 	// Get the current IAM policy.
 	handle := client.IAM(name)
 	policy, err := handle.Policy(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to get policy: %v", err)
+		return fmt.Errorf("failed to get policy: %w", err)
 	}
 
 	// Grant the member access permissions.
 	policy.Remove(member, "roles/secretmanager.secretAccessor")
 	if err = handle.SetPolicy(ctx, policy); err != nil {
-		return fmt.Errorf("failed to save policy: %v", err)
+		return fmt.Errorf("failed to save policy: %w", err)
 	}
 
 	fmt.Fprintf(w, "Updated IAM policy for %s\n", name)

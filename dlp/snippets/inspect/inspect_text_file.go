@@ -22,7 +22,7 @@ import (
 	"io/ioutil"
 
 	dlp "cloud.google.com/go/dlp/apiv2"
-	dlppb "google.golang.org/genproto/googleapis/privacy/dlp/v2"
+	"cloud.google.com/go/dlp/apiv2/dlppb"
 )
 
 // inspectTextFile inspects a text file at a given filePath, and prints results.
@@ -66,13 +66,13 @@ func inspectTextFile(w io.Writer, projectID, filePath string) error {
 	}
 	resp, err := client.InspectContent(ctx, req)
 	if err != nil {
-		return fmt.Errorf("InspectContent: %v", err)
+		return fmt.Errorf("InspectContent: %w", err)
 	}
 
 	// Process the results.
 	fmt.Fprintf(w, "Findings: %d\n", len(resp.Result.Findings))
 	for _, f := range resp.Result.Findings {
-		fmt.Fprintf(w, "\tQoute: %s\n", f.Quote)
+		fmt.Fprintf(w, "\tQuote: %s\n", f.Quote)
 		fmt.Fprintf(w, "\tInfo type: %s\n", f.InfoType.Name)
 		fmt.Fprintf(w, "\tLikelihood: %s\n", f.Likelihood)
 	}

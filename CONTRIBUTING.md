@@ -1,58 +1,89 @@
 # Contributing
 
-1. Sign one of the contributor license agreements below.
-1. [Install Go](https://golang.org/doc/install).
-1. Clone the repo:
+* [Ways to Contribute](#ways-to-contribute)
+* [Getting Ready to Contribute](#getting-ready-to-contribute)
+    * [Contributor License Agreements](#contributor-license-agreements)
+    * [Development Environment Setup](#development-environment-setup)
+* [Code Style](#code-style)
+* [Testing](#testing)
+* [Pull Request Lifecycle](#pull-request-lifecycle)
 
-    `git clone https://github.com/GoogleCloudPlatform/golang-samples.git`
+## Ways To Contribute
+
+Thank you for your interest in `golang-samples`!
+
+This repository hosts code samples linked in cloud.google.com documentation.
+Because samples will be accompanied by separate documentation, we do not
+typically welcome unsolicited new samples. However, if you feel a specific
+sample is missing or incorrect, please [file an issue](https://github.com/GoogleCloudPlatform/golang-samples/issues/new/choose), and we can discuss the
+available options.
+
+If you'd like to contribute to existing samples, have a look at our [issues
+list](https://github.com/GoogleCloudPlatform/golang-samples/issues) to see where we could use your help. Leave a comment on the issue to let
+others know you are interested.
+
+## Getting ready to contribute
+
+### Contributor License Agreements
+
+Before we can accept your contributions, you'll need to sign a Contributor
+License Agreement (CLA):
+
+- **If you are an individual writing original source code** and **you own the
+  intellectual property**, then you'll need to sign an [individual CLA][indvcla].
+- **If you work for a company that wants to allow you to contribute your work**,
+  then you'll need to sign a [corporate CLA][corpcla].
+
+You can sign these electronically (just scroll to the bottom). After that,
+we'll be able to accept your pull requests.
+
+### Development environment setup
+
+1. [Install Go](https://golang.org/doc/install).
+
+1. To contribute your changes, you'll most likely need to fork the repository.
+   This can be done from the "Fork" menu in the Github UI, or with the [Github
+   CLI](http://cli.github.com) command: `gh repo fork
+   GoogleCloudPlatform/golang-samples`.
+
+1. Clone the repo. Replace `${GITHUB_OWNER}` with your own github user name to
+   clone your fork.
+
+   `git clone https://github.com/${GITHUB_OWNER}/golang-samples.git`
+
 1. Change into the checked out source:
 
-    `cd golang-samples`
-1. Fork the repo.
-1. Set your fork as a remote:
+   `cd golang-samples`
 
-    `git remote add fork https://github.com/GITHUB_USERNAME/golang-samples.git`
-1. Make changes (see [Formatting](#formatting) and [Style](#style)) and commit
-   to your fork. Initial commit messages should follow the
-   [Conventional Commits](https://www.conventionalcommits.org/) style (e.g.
-   `feat(functions): add gophers codelab`).
-1. Send a pull request with your changes.
-1. A maintainer will review the pull request and make comments. Prefer adding
-   additional commits over ammending and force-pushing since it can be difficult
-   to follow code reviews when the commit history changes.
+1. You are now ready to make your changes. See [Pull Request
+   Lifecycle](#pull-request-lifecycle) to learn how to send your changes for
+   review.
 
-   Commits will be squashed when they're merged.
-
-## Tested Go versions
-
-We test using the oldest and newest supported Go versions. We do not test the
-intermediate versions. See [testing/kokoro](testing/kokoro).
-
-# Formatting
+## Code Style
 
 All code must be formatted with `gofmt` (with the latest Go version) and pass
-`go vet`.
+`go vet`. To run these tools on samples in the `iam` directory, you would run `make lint dir=iam` from the root of the repository.
 
-# Style
+The [Google Cloud Samples Style Guide][style-guide] is considered the primary
+guidelines for all Google Cloud samples. This section details some additional,
+Go-specific rules that will be merged into the Samples Style Guide in the near
+future.
+
+[style-guide]: https://googlecloudplatform.github.io/samples-style-guide/
 
 Please read and follow https://github.com/golang/go/wiki/CodeReviewComments for
 all Go code in this repo.
 
 The following style guidelines are specific to writing Go samples.
 
-Canonical samples:
+### Google Cloud Project ID
 
-* Veneer client library with complex request: [`inspect_string.go`](https://github.com/GoogleCloudPlatform/golang-samples/blob/master/dlp/snippets/inspect/inspect_string.go)
-* Apiary client with normal request: [`dicom_store_create.go`](https://github.com/GoogleCloudPlatform/golang-samples/blob/master/healthcare/dicom_store_create.go)
-* Apiary client with complex request: [`fhir_resource_create.go`](https://github.com/GoogleCloudPlatform/golang-samples/blob/master/healthcare/fhir_resource_create.go)
-* Apiary client with file I/O: [`dicomweb_instance_store.go`](https://github.com/GoogleCloudPlatform/golang-samples/blob/master/healthcare/dicomweb_instance_store.go)
+If a project ID is needed, snippets should have a `projectID string` argument.
 
-## One file per sample
+Tests that require a Project ID should use [`testutil`](https://pkg.go.dev/github.com/GoogleCloudPlatform/golang-samples/internal/testutil) helper functions, or
+consult the `GOLANG_SAMPLES_PROJECT_ID` environment variable.
 
-Each sample should be in its own file so the [imports used by the sample can
-be included in the region tag](#include-imports-in-region-tags).
-
-## Sample package name, file name, and directory
+### Sample package name, file name, and directory
 
 The top level directory should be the product the sample is for (e.g.
 `functions` or `dlp`).
@@ -60,10 +91,7 @@ The top level directory should be the product the sample is for (e.g.
 Sub-directories can be used to keep different groups of samples for the product
 separate.
 
-The package name should match the directory name, unless it's a quickstart.
-[Quickstarts use `package main`](#only-quickstarts-have-package-main); the
-default binary name is the name of the directory. See
-https://golang.org/doc/effective_go.html#names.
+The package name should match the directory name, as is standard go practice.
 
 Files should be named after the sample in them (e.g. `hello.go`). No need to
 include the product name or "sample" in the filename.
@@ -72,34 +100,12 @@ If there are many samples to write in the same directory, use filename prefixes
 to group the files acting on similar types (for example, when writing
 create/update/delete type samples).
 
-## Include imports and flags in region tags
-
-The sample region (e.g. `[START foo]` and `[END foo]`) should include the import
-block.
-
-```go
-// Package hello contains Hello samples.
-package hello
-
-// [START hello]
-import "fmt"
-
-func hello(w io.Writer) {
-	fmt.Fprintln(w, "Hello, World")
-}
-
-// [END hello]
-```
-
-For quickstarts, the region should include the package declaration as well as any [flags](#function-arguments-for-quickstarts).
+Hosting platform samples may require a different directory and file structure.
+When possible, follow the pattern of existing samples for that product.
 
 For snippets, the region should _not_ include the package declaration.
 
-Also see [Imports](#imports).
-
-## Print to an `io.Writer` for snippets
-
-(Note: this doesn't apply to quickstarts) 
+### Print to an `io.Writer` for snippets
 
 Do not print to `stdout` or `stderr`. Pass `w io.Writer` as the first argument
 to the sample function and print to it with `fmt.Fprintf(w, ...)`.
@@ -115,7 +121,8 @@ func hello(w io.Writer) {
 
 The output can be verified during testing using a buffer.
 
-[inspect_test.go](https://github.com/GoogleCloudPlatform/golang-samples/blob/master/dlp/snippets/inspect/inspect_test.go)
+[inspect_test.go](https://github.com/GoogleCloudPlatform/golang-samples/blob/main/dlp/snippets/inspect/inspect_test.go)
+
 ```go
 func TestInspectString(t *testing.T) {
 	tc := testutil.SystemTest(t)
@@ -132,22 +139,7 @@ func TestInspectString(t *testing.T) {
 }
 ```
 
-## Google Cloud Project ID
-
-Quickstarts should use an example project ID or add a project ID flag.
-
-If a project ID is needed, snippets should have a `projectID string` argument.
-
-## Only quickstarts have `package main`
-
-Sample code should not include a runnable binary. Binaries should only be
-included for quickstarts (which should all be `package main` with the example
-code in `func main`).
-
-Quickstarts need to be in a separate directories from snippets because they need
-to be in different packages.
-
-## Declare a `context.Context` as needed
+### Declare a `context.Context` as needed
 
 Don't pass a `context.Context` as an argument. New Go developers may not
 understand where the `ctx` comes from.
@@ -160,7 +152,7 @@ understand where the `ctx` comes from.
 + }
 ```
 
-## Function arguments for snippets
+### Function arguments for snippets
 
 There should be as few function arguments as possible. An `io.Writer` and
 project ID are the most common. If you need additional arguments (for example,
@@ -170,7 +162,7 @@ body of the sample function.
 ```go
 // delete deletes the resource identified by name.
 func delete(w io.Writer, name string) error {
-	// name := fmt.Sprintf("/projects/my-project/resources/my-resource")
+	// name := "/projects/my-project/resources/my-resource"
 	ctx := context.Background()
 	client, err := foo.NewClient(ctx)
 	if err != nil {
@@ -183,60 +175,14 @@ func delete(w io.Writer, name string) error {
 }
 ```
 
-## Function arguments for quickstarts
-
-Since [quickstarts use `package main`](#only-quickstarts-have-package-main), we use the `flag` package for 
-passing parameters into a quickstart, and use `testutil.BuildMain` to build and test your quickstart.
-
-In your quickstart:
-```go
-func main() {
-	projectID := flag.String("project_id", "", "Cloud Project ID")
-	resourceName := flag.String("resourceName", "", "Name of resource")
-	flag.Parse()
-
-	fmt.Printf("projectID: %s, resource_name: %s", *projectID, *resourceName)
-	// ...
-}
-```
-
-In your quickstart test:
-```go
-func TestQuickstart(t *testing.T) {
-	tc := testutil.SystemTest(t)
-	m := testutil.BuildMain(t)
-
-	if !m.Built() {
-		t.Fatalf("failed to build app")
-	}
-
-	testResourceName := "my-resource-name"
-
-	stdOut, stdErr, err := m.Run(nil, 10*time.Minute,
-		"--project_id", tc.ProjectID,
-		"--resource_name", testResourceName,
-	)
-
-	if err != nil {
-		t.Errorf("stdout: %v", string(stdOut))
-		t.Errorf("stderr: %v", string(stdErr))
-		t.Errorf("execution failed: %v", err)
-	}
-
-	if got := string(stdOut); !strings.Contains(got, testResourceName) {
-		t.Errorf("got %q, want to contain %q", got, testResourceName)
-	}
-}
-```
-
-## Don't export sample functions
+### Don't export sample functions
 
 Sample functions should not be
 [exported](https://golang.org/ref/spec#Exported_identifiers). Users should not
 be depending directly on this sample code. So, the function name should start
 with a lower case letter.
 
-## Prefer inline proto declarations
+### Prefer inline proto declarations
 
 Where possible, prefer a single declaration when initializing a proto value.
 
@@ -251,21 +197,17 @@ API call (which uses `req`) is easier to understand.
 + }
 ```
 
-## Initialize clients and services in every sample
+### Line length
 
-Don't initialize one client for the entire set of samples and pass it as an
-argument. Each sample should initialize its own client/service.
+Generally, Go code does not have a strict line length limit. See
+[the Code Review Comments wiki](https://github.com/golang/go/wiki/CodeReviewComments#line-length).
+However, sample code is embedded on cloud.google.com and very long lines can be
+difficult to read in the embedded code viewer.
 
-```diff
-- func hello(client foo.Client, w io.Writer) { ... }
-+ func hello(w io.Writer) {
-+	ctx := context.Background()
-+	client, err := foo.NewClient(ctx)
-+	// ...
-+ }
-```
+Keep lines under around 100 characters, keeping in mind the general rules in the
+[wiki](https://github.com/golang/go/wiki/CodeReviewComments#line-length).
 
-## Return errors
+### Return errors
 
 If the sample can run into errors, return the errors with additional context.
 Don't call `log.Fatal` or friends.
@@ -293,83 +235,41 @@ func delete(w io.Writer, resourceID string) error {
 -		log.Fatal(err)
 -	}
 +	if err != nil {
-+		return fmt.Errorf("foo.NewClient: %v", err)
++		return fmt.Errorf("foo.NewClient: %w", err)
 + 	}
 +	if err := client.Delete(resourceID); err != nil {
-+		return fmt.Errorf("Delete: %v", err)
++		return fmt.Errorf("Delete: %w", err)
 +	}
 	return nil
 }
 ```
 
+## Go version in go.mod files
 
-## Imports
+The Go version in `go.mod` files is the minimum version of Go supported by the
+module. Generally, this should be the minimum version supported & tested by the
+repo. There are some cases where we need a higher minimum version.
 
-Imports should be added and sorted by
-[`goimports`](https://godoc.org/golang.org/x/tools/cmd/goimports). There should
-be at least two groups, separated by a newline:
-* Standard library
-* Everything else
+Do not update the minimum version unless required.
 
-```go
-import (
-	"context"
-	"fmt"
-	"log"
-	"time"
 
-	"contrib.go.opencensus.io/exporter/stackdriver"
-	"go.opencensus.io/stats"
-	"go.opencensus.io/stats/view"
-	"golang.org/x/exp/rand"
-)
-```
+## Testing
 
-## Comment functions and packages
+Tests are required for all samples. When writing a pull request, be sure to
+write and run the tests in any modified directories.
 
-One file in the sample package should have a package comment. The comment is
-shown as a description on
-https://godoc.org/github.com/GoogleCloudPlatform/golang-samples. If there are
-many files/samples in the package, it's common to create a `doc.go` file that
-only has the package comment. The comment should start with
-`Package packagename`.
+### Running tests
 
-Functions should have comments starting with the name of the function (with the
-same capitalization, even if it's lower case).
+To run the system test yourself, you will need a Google Cloud Project, and valid
+authentication.
 
-```go
-// Package foo contains samples for Foo.
-package foo
+1. Ensure you are logged in using `gcloud auth login --update-adc`.
+    * the `--update-adc` flag refreshes [Application Default
+      Credentials](https://developers.google.com/identity/protocols/application-default-credentials).
+1. Set the `GOLANG_SAMPLES_PROJECT_ID` environment variable to a suitable test project.
+1. To run all tests in a directory, run `make test dir=relative/dir`
 
-// hello prints "Hello, World."
-func hello(w io.Writer) { ... }
-```
-
-See
-[Sample package name, file name, and directory](#sample-package-name-file-name-and-directory)
-and https://golang.org/doc/effective_go.html#commentary.
-
-## Common identifiers
-
-* **`ctx`**: All `context.Context` values unless the original can't be shadowed.
-* **`name`**: Fully-qualified resource names (e.g.
-  `/projects/my-project/resource/my-resource`).
-* **`parent`**: Partially-qualified resource names (e.g.
-  `/projects/my-project`)
-* **`req`**: Request value to send.
-* **`projectID`**: Google Cloud project ID.
-
-Names should always be camelCase, even if it's a constant. Initialisms/acronyms
-should have consistent case (e.g. `createFHIRStore` and `fhirStoreID`). See
-https://golang.org/doc/effective_go.html#names.
-
-See [Don't export sample functions](#dont-export-sample-functions).
-
-## Reflection
-
-Do not use the `reflect` package.
-
-## Use `testutil` for tests
+### Use `testutil` for tests
 
 All tests should use `testutil.SystemTest` or variants. `testutil` checks the
 `GOLANG_SAMPLES_PROJECT_ID` environment variable exists, and skips the test if
@@ -381,51 +281,42 @@ If you can't use `testutil` for some reason, be sure to skip tests if
 `GOLANG_SAMPLES_PROJECT_ID` is not set. This makes sure tests pass when someone
 clones the repo and runs tests.
 
-See [Print to an `io.Writer`](#print-to-an-iowriter) for a full test example.
+### Creating resources for tests
 
-See [Testing](#testing).
+Tests are responsible for creating any resources they require, and destroying
+them once testing is complete. Names of these
+resources should be unique enough to avoid conflicts in the event of multiple
+concurrent test runs - this typically means suffixing them with some thing
+unique, like a timestamp.
 
-# Testing
 
-Tests are required for all samples. When writing a pull request, be sure to
-write and run the tests in any modified directories.
+## Pull Request lifecycle
 
-See [Use `testutil` for tests](#use-testutil-for-tests) and
-[Print to an `io.Writer`](#print-to-an-iowriter).
+1. Before creating a Pull Request, ensure that your code meets style guidelines,
+   and the tests pass. From the root of the repository, run `make lint test
+   dir=relative/dir`.
+1. [Create a pull
+request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
+with your changes.
+    * PR titles should follow [Conventional
+      Commits](https://www.conventionalcommits.org/) style (e.g.
+      `feat(functions): add gophers codelab`).
+    * You may wish to [enable
+      automerge](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request#enabling-auto-merge)
+      on your PR, so it submits when all PR checks are passing (including
+      review).
 
-## Creating resources for tests
+1. Within 2-5 days, a reviewer will review your PR. They may approve it, or
+   request changes. When requesting changes, reviewers should self-assign the
+   PR to ensure they are aware of any updates.
 
-When creating resources for tests, avoid using UUIDs. Instead, prefer 
-resource names that incorporate aspects of your test, such as `tc.ProjectID +
--golang-test-mypai-mysnippet`. 
+1. If additional changes are needed, push additional commits to your PR branch -
+   this helps the reviewer know which parts of the PR have changed.  Commits
+   will be squashed when merged.
 
-## Running system tests
-
-1. Set the `GOLANG_SAMPLES_PROJECT_ID` environment variable to a suitable test project.
-1. Ensure you are logged in using `gcloud auth login` or set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of your credentials file.
-   Tests are authenticated using [Application Default Credentials](https://developers.google.com/identity/protocols/application-default-credentials).
-1. Install the test dependencies:
-
-    `go get -t -d github.com/GoogleCloudPlatform/golang-samples/...`
-1. Run the tests:
-
-    `go test github.com/GoogleCloudPlatform/golang-samples/...`
-
-Note: You may want to `cd` to the directory you're modifying and run
-`go test -v ./...` to avoid running every test in the repo.
-
-# Contributor License Agreements
-
-Before we can accept your pull requests you'll need to sign a Contributor
-License Agreement (CLA):
-
-- **If you are an individual writing original source code** and **you own the
-intellectual property**, then you'll need to sign an [individual CLA][indvcla].
-- **If you work for a company that wants to allow you to contribute your work**,
-then you'll need to sign a [corporate CLA][corpcla].
-
-You can sign these electronically (just scroll to the bottom). After that,
-we'll be able to accept your pull requests.
+   - Please follow up with changes promptly. If a PR is awaiting changes by the
+     author for more than 10 days, maintainers may mark that PR as Draft. PRs
+     that are inactive for more than 30 days may be closed.
 
 [gcloudcli]: https://developers.google.com/cloud/sdk/gcloud/
 [indvcla]: https://developers.google.com/open-source/cla/individual

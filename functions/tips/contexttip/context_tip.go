@@ -14,6 +14,7 @@
 
 // [START functions_golang_context]
 // [START functions_tips_gcp_apis]
+// [START functions_pubsub_publish]
 
 // Package contexttip is an example of how to use Pub/Sub and context.Context in
 // a Cloud Function.
@@ -23,21 +24,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
-
-// GCP_PROJECT is a user-set environment variable.
-var projectID = os.Getenv("GCP_PROJECT")
 
 // client is a global Pub/Sub client, initialized once per instance.
 var client *pubsub.Client
+var once sync.Once
 
-func init() {
+// createClient creates the global pubsub Client
+func createClient() {
+	// GOOGLE_CLOUD_PROJECT is a user-set environment variable.
+	var projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	// err is pre-declared to avoid shadowing client.
 	var err error
 
@@ -49,31 +52,39 @@ func init() {
 	}
 }
 
+func init() {
+	// register http function
+	functions.HTTP("PublishMessage", PublishMessage)
+}
+
 type publishRequest struct {
-	Topic string `json:"topic"`
+	Topic   string `json:"topic"`
+	Message string `json:"message"`
 }
 
 // PublishMessage publishes a message to Pub/Sub. PublishMessage only works
 // with topics that already exist.
 func PublishMessage(w http.ResponseWriter, r *http.Request) {
-	// Read the request body.
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("ioutil.ReadAll: %v", err)
-		http.Error(w, "Error reading request", http.StatusBadRequest)
-		return
-	}
-
-	// Parse the request body to get the topic name.
+	// use of sync.Once ensures client is only created once.
+	once.Do(createClient)
+	// Parse the request body to get the topic name and message.
 	p := publishRequest{}
-	if err := json.Unmarshal(data, &p); err != nil {
-		log.Printf("json.Unmarshal: %v", err)
+
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		log.Printf("json.NewDecoder: %v", err)
 		http.Error(w, "Error parsing request", http.StatusBadRequest)
 		return
 	}
 
+	if p.Topic == "" || p.Message == "" {
+		s := "missing 'topic' or 'message' parameter"
+		log.Println(s)
+		http.Error(w, s, http.StatusBadRequest)
+		return
+	}
+
 	m := &pubsub.Message{
-		Data: []byte("Test message"),
+		Data: []byte(p.Message),
 	}
 	// Publish and Get use r.Context() because they are only needed for this
 	// function invocation. If this were a background function, they would use
@@ -84,8 +95,9 @@ func PublishMessage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error publishing message", http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprintf(w, "Published msg: %v", id)
+	fmt.Fprintf(w, "Message published: %v", id)
 }
 
+// [END functions_pubsub_publish]
 // [END functions_tips_gcp_apis]
 // [END functions_golang_context]

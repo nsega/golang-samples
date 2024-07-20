@@ -21,7 +21,7 @@ import (
 	"io"
 
 	talent "cloud.google.com/go/talent/apiv4beta1"
-	talentpb "google.golang.org/genproto/googleapis/cloud/talent/v4beta1"
+	"cloud.google.com/go/talent/apiv4beta1/talentpb"
 )
 
 // getJob gets an existing job by its resource name.
@@ -31,8 +31,9 @@ func getJob(w io.Writer, projectID, jobID string) (*talentpb.Job, error) {
 	// Initialize a jobService client.
 	c, err := talent.NewJobClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("talent.NewJobClient: %v", err)
+		return nil, fmt.Errorf("talent.NewJobClient: %w", err)
 	}
+	defer c.Close()
 
 	// Construct a getJob request.
 	jobName := fmt.Sprintf("projects/%s/jobs/%s", projectID, jobID)
@@ -44,7 +45,7 @@ func getJob(w io.Writer, projectID, jobID string) (*talentpb.Job, error) {
 
 	resp, err := c.GetJob(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("GetJob: %v", err)
+		return nil, fmt.Errorf("GetJob: %w", err)
 	}
 
 	fmt.Fprintf(w, "Job: %q\n", resp.GetName())

@@ -14,14 +14,14 @@
 
 package notifications
 
-// [START scc_create_notification_config]
+// [START securitycenter_create_notification_config]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 )
 
 func createNotificationConfig(w io.Writer, orgID string, pubsubTopic string, notificationConfigID string) error {
@@ -33,11 +33,15 @@ func createNotificationConfig(w io.Writer, orgID string, pubsubTopic string, not
 	client, err := securitycenter.NewClient(ctx)
 
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close()
 
 	req := &securitycenterpb.CreateNotificationConfigRequest{
+		// Parent must be in one of the following formats:
+		//		"organizations/{orgId}"
+		//		"projects/{projectId}"
+		//		"folders/{folderId}"
 		Parent:   fmt.Sprintf("organizations/%s", orgID),
 		ConfigId: notificationConfigID,
 		NotificationConfig: &securitycenterpb.NotificationConfig{
@@ -53,11 +57,11 @@ func createNotificationConfig(w io.Writer, orgID string, pubsubTopic string, not
 
 	notificationConfig, err := client.CreateNotificationConfig(ctx, req)
 	if err != nil {
-		return fmt.Errorf("Failed to create notification config: %v", err)
+		return fmt.Errorf("Failed to create notification config: %w", err)
 	}
 	fmt.Fprintln(w, "New NotificationConfig created: ", notificationConfig)
 
 	return nil
 }
 
-// [END scc_create_notification_config]
+// [END securitycenter_create_notification_config]

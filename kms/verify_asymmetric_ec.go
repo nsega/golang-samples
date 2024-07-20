@@ -27,7 +27,7 @@ import (
 	"math/big"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 )
 
 // verifyAsymmetricSignatureEC will verify that an 'EC_SIGN_P256_SHA256' signature is
@@ -41,13 +41,14 @@ func verifyAsymmetricSignatureEC(w io.Writer, name string, message, signature []
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create kms client: %v", err)
+		return fmt.Errorf("failed to create kms client: %w", err)
 	}
+	defer client.Close()
 
 	// Retrieve the public key from KMS.
 	response, err := client.GetPublicKey(ctx, &kmspb.GetPublicKeyRequest{Name: name})
 	if err != nil {
-		return fmt.Errorf("failed to get public key: %v", err)
+		return fmt.Errorf("failed to get public key: %w", err)
 	}
 
 	// Parse the public key. Note, this example assumes the public key is in the
@@ -55,17 +56,17 @@ func verifyAsymmetricSignatureEC(w io.Writer, name string, message, signature []
 	block, _ := pem.Decode([]byte(response.Pem))
 	publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return fmt.Errorf("failed to parse public key: %v", err)
+		return fmt.Errorf("failed to parse public key: %w", err)
 	}
 	ecKey, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		return fmt.Errorf("public key is not rsa")
+		return fmt.Errorf("public key is not elliptic curve")
 	}
 
 	// Verify Elliptic Curve signature.
 	var parsedSig struct{ R, S *big.Int }
 	if _, err = asn1.Unmarshal(signature, &parsedSig); err != nil {
-		return fmt.Errorf("asn1.Unmarshal: %v", err)
+		return fmt.Errorf("asn1.Unmarshal: %w", err)
 	}
 
 	digest := sha256.Sum256(message)

@@ -23,7 +23,7 @@ import (
 	"io"
 
 	vision "cloud.google.com/go/vision/apiv1"
-	visionpb "google.golang.org/genproto/googleapis/cloud/vision/v1"
+	"cloud.google.com/go/vision/v2/apiv1/visionpb"
 )
 
 // getProduct gets a product.
@@ -31,7 +31,7 @@ func getProduct(w io.Writer, projectID string, location string, productID string
 	ctx := context.Background()
 	c, err := vision.NewProductSearchClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewProductSearchClient: %v", err)
+		return fmt.Errorf("NewProductSearchClient: %w", err)
 	}
 	defer c.Close()
 
@@ -41,7 +41,7 @@ func getProduct(w io.Writer, projectID string, location string, productID string
 
 	resp, err := c.GetProduct(ctx, req)
 	if err != nil {
-		return fmt.Errorf("GetProduct: %v", err)
+		return fmt.Errorf("GetProduct: %w", err)
 	}
 
 	fmt.Fprintf(w, "Product name: %s\n", resp.Name)

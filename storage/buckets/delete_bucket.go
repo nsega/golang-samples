@@ -30,16 +30,16 @@ func deleteBucket(w io.Writer, bucketName string) error {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("storage.NewClient: %v", err)
+		return fmt.Errorf("storage.NewClient: %w", err)
 	}
 	defer client.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*30)
 	defer cancel()
 
 	bucket := client.Bucket(bucketName)
 	if err := bucket.Delete(ctx); err != nil {
-		return fmt.Errorf("Bucket(%q).Delete: %v", bucketName, err)
+		return fmt.Errorf("Bucket(%q).Delete: %w", bucketName, err)
 	}
 	fmt.Fprintf(w, "Bucket %v deleted\n", bucketName)
 	return nil

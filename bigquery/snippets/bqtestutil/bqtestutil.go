@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/gofrs/uuid"
 )
@@ -26,7 +27,7 @@ import (
 func UniqueBQName(prefix string) (string, error) {
 	u, err := uuid.NewV4()
 	if err != nil {
-		return "", fmt.Errorf("failed to generate bq uuid: %v", err)
+		return "", fmt.Errorf("failed to generate bq uuid: %w", err)
 	}
 	return fmt.Sprintf("%s_%s", sanitize(prefix, "_"), sanitize(u.String(), "_")), nil
 }
@@ -35,13 +36,15 @@ func UniqueBQName(prefix string) (string, error) {
 func UniqueBucketName(prefix, projectID string) (string, error) {
 	u, err := uuid.NewV4()
 	if err != nil {
-		return "", fmt.Errorf("failed to generate bucket uuid: %v", err)
+		return "", fmt.Errorf("failed to generate bucket uuid: %w", err)
 	}
 	f := fmt.Sprintf("%s-%s-%s", sanitize(prefix, "-"), sanitize(projectID, "-"), sanitize(u.String(), "-"))
 	// bucket max name length is 63 chars, so we truncate.
 	if len(f) > 63 {
-		return f[:63], nil
+		f = f[:63]
 	}
+	// a trailing dash would make an invalid bucket name
+	f = strings.TrimSuffix(f, "-")
 	return f, nil
 }
 

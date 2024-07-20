@@ -21,7 +21,7 @@ import (
 	"io"
 
 	dlp "cloud.google.com/go/dlp/apiv2"
-	dlppb "google.golang.org/genproto/googleapis/privacy/dlp/v2"
+	"cloud.google.com/go/dlp/apiv2/dlppb"
 )
 
 // deidentifyDateShift shifts dates found in the input between lowerBoundDays and
@@ -35,8 +35,9 @@ func deidentifyDateShift(w io.Writer, projectID string, lowerBoundDays, upperBou
 	ctx := context.Background()
 	client, err := dlp.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("dlp.NewClient: %v", err)
+		return fmt.Errorf("dlp.NewClient: %w", err)
 	}
+	defer client.Close()
 	// Create a configured request.
 	req := &dlppb.DeidentifyContentRequest{
 		Parent: fmt.Sprintf("projects/%s/locations/global", projectID),
@@ -77,7 +78,7 @@ func deidentifyDateShift(w io.Writer, projectID string, lowerBoundDays, upperBou
 	// Send the request.
 	r, err := client.DeidentifyContent(ctx, req)
 	if err != nil {
-		return fmt.Errorf("DeidentifyContent: %v", err)
+		return fmt.Errorf("DeidentifyContent: %w", err)
 	}
 	// Print the result.
 	fmt.Fprint(w, r.GetItem().GetValue())

@@ -14,28 +14,31 @@
 
 package findings
 
-// [START add_security_marks]
+// [START securitycenter_add_finding_security_marks]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
-// addSecurityMarks adds/updates a the security marks for the findingName and
+// addSecurityMarks adds/updates security marks for the findingName and
 // returns the updated marks. Specifically, it sets "key_a" an "key_b" to
 // "value_a" and "value_b" respectively. findingName is the resource path for
 // the finding to add marks to.
 func addSecurityMarks(w io.Writer, findingName string) error {
-	// findingName := "organizations/11123213/sources/12342342/findings/fidningid"
+	// Specify the value of 'findingName' in one of the following formats:
+	// 		"organizations/{orgId}/sources/{sourceId}/findings/{findingId}"
+	// 		"projects/{projectId}/sources/{sourceId}/findings/{findingId}"
+	// 		"folders/{folderId}/sources/{sourceId}/findings/{findingId}"
 	// Instantiate a context and a security service client to make API calls.
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 
@@ -54,7 +57,7 @@ func addSecurityMarks(w io.Writer, findingName string) error {
 
 	updatedMarks, err := client.UpdateSecurityMarks(ctx, req)
 	if err != nil {
-		return fmt.Errorf("UpdateSecurityMarks: %v", err)
+		return fmt.Errorf("UpdateSecurityMarks: %w", err)
 	}
 
 	fmt.Fprintf(w, "Updated marks: %s\n", updatedMarks.Name)
@@ -64,4 +67,4 @@ func addSecurityMarks(w io.Writer, findingName string) error {
 	return nil
 }
 
-// [END add_security_marks]
+// [END securitycenter_add_finding_security_marks]

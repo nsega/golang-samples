@@ -50,6 +50,8 @@ type GCSEvent struct {
 }
 
 // PubSubMessage is the payload of a Pub/Sub event.
+// See the documentation for more details:
+// https://cloud.google.com/pubsub/docs/reference/rest/v1/PubsubMessage
 type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
@@ -68,7 +70,7 @@ var (
 )
 
 func setup(ctx context.Context) error {
-	projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	projectID = os.Getenv("GCP_PROJECT")
 	resultBucket = os.Getenv("RESULT_BUCKET")
 	resultTopic = os.Getenv("RESULT_TOPIC")
 	toLang = strings.Split(os.Getenv("TO_LANG"), ",")
@@ -79,28 +81,28 @@ func setup(ctx context.Context) error {
 	if visionClient == nil {
 		visionClient, err = vision.NewImageAnnotatorClient(ctx)
 		if err != nil {
-			return fmt.Errorf("vision.NewImageAnnotatorClient: %v", err)
+			return fmt.Errorf("vision.NewImageAnnotatorClient: %w", err)
 		}
 	}
 
 	if translateClient == nil {
 		translateClient, err = translate.NewClient(ctx)
 		if err != nil {
-			return fmt.Errorf("translate.NewClient: %v", err)
+			return fmt.Errorf("translate.NewClient: %w", err)
 		}
 	}
 
 	if pubsubClient == nil {
 		pubsubClient, err = pubsub.NewClient(ctx, projectID)
 		if err != nil {
-			return fmt.Errorf("translate.NewClient: %v", err)
+			return fmt.Errorf("translate.NewClient: %w", err)
 		}
 	}
 
 	if storageClient == nil {
 		storageClient, err = storage.NewClient(ctx)
 		if err != nil {
-			return fmt.Errorf("storage.NewClient: %v", err)
+			return fmt.Errorf("storage.NewClient: %w", err)
 		}
 	}
 	return nil

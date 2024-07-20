@@ -23,7 +23,7 @@ import (
 	"io"
 
 	vision "cloud.google.com/go/vision/apiv1"
-	visionpb "google.golang.org/genproto/googleapis/cloud/vision/v1"
+	"cloud.google.com/go/vision/v2/apiv1/visionpb"
 )
 
 // deleteReferenceImage deletes a reference image from a product.
@@ -31,7 +31,7 @@ func deleteReferenceImage(w io.Writer, projectID string, location string, produc
 	ctx := context.Background()
 	c, err := vision.NewProductSearchClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewProductSearchClient: %v", err)
+		return fmt.Errorf("NewProductSearchClient: %w", err)
 	}
 	defer c.Close()
 
@@ -40,7 +40,7 @@ func deleteReferenceImage(w io.Writer, projectID string, location string, produc
 	}
 
 	if err = c.DeleteReferenceImage(ctx, req); err != nil {
-		return fmt.Errorf("NewProductSearchClient: %v", err)
+		return fmt.Errorf("NewProductSearchClient: %w", err)
 	}
 
 	fmt.Fprintf(w, "Reference image deleted from product.\n")

@@ -23,9 +23,9 @@ import (
 	"time"
 
 	kms "cloud.google.com/go/kms/apiv1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 	"github.com/gofrs/uuid"
 	"google.golang.org/api/iterator"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 	fieldmask "google.golang.org/genproto/protobuf/field_mask"
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
@@ -42,6 +42,7 @@ type kmsFixture struct {
 	AsymmetricSignRSAKeyName string
 	HSMKeyName               string
 	SymmetricKeyName         string
+	HMACKeyName              string
 }
 
 func NewKMSFixture(projectID string) (*kmsFixture, error) {
@@ -50,7 +51,7 @@ func NewKMSFixture(projectID string) (*kmsFixture, error) {
 
 	k.client, err = kms.NewKeyManagementClient(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("failed to create kms client: %v", err)
+		return nil, fmt.Errorf("failed to create kms client: %w", err)
 	}
 
 	k.ProjectID = projectID
@@ -59,32 +60,37 @@ func NewKMSFixture(projectID string) (*kmsFixture, error) {
 
 	k.KeyRingName, err = k.CreateKeyRing(k.LocationName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create key ring: %v", err)
+		return nil, fmt.Errorf("failed to create key ring: %w", err)
 	}
 
 	k.AsymmetricDecryptKeyName, err = k.CreateAsymmetricDecryptKey(k.KeyRingName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create asymmetric decrypt key: %v", err)
+		return nil, fmt.Errorf("failed to create asymmetric decrypt key: %w", err)
 	}
 
 	k.AsymmetricSignECKeyName, err = k.CreateAsymmetricSignECKey(k.KeyRingName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create asymmetric sign ec key: %v", err)
+		return nil, fmt.Errorf("failed to create asymmetric sign ec key: %w", err)
 	}
 
 	k.AsymmetricSignRSAKeyName, err = k.CreateAsymmetricSignRSAKey(k.KeyRingName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create asymmetric sign rsa key: %v", err)
+		return nil, fmt.Errorf("failed to create asymmetric sign rsa key: %w", err)
 	}
 
 	k.HSMKeyName, err = k.CreateHSMKey(k.KeyRingName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create hsm key: %v", err)
+		return nil, fmt.Errorf("failed to create hsm key: %w", err)
 	}
 
 	k.SymmetricKeyName, err = k.CreateSymmetricKey(k.KeyRingName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create symmetric key: %v", err)
+		return nil, fmt.Errorf("failed to create symmetric key: %w", err)
+	}
+
+	k.HMACKeyName, err = k.CreateHMACKey(k.KeyRingName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create hmac key: %w", err)
 	}
 
 	return &k, nil
@@ -107,7 +113,7 @@ func (k *kmsFixture) Cleanup() error {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("failed to list keys for %s: %v", k.KeyRingName, err)
+			return fmt.Errorf("failed to list keys for %s: %w", k.KeyRingName, err)
 		}
 
 		// Remove any rotation schedules
@@ -122,7 +128,7 @@ func (k *kmsFixture) Cleanup() error {
 					Paths: []string{"rotation_period", "next_rotation_time"},
 				},
 			}); err != nil {
-				return fmt.Errorf("failed to remove rotation schedule for %s: %v", key.Name, err)
+				return fmt.Errorf("failed to remove rotation schedule for %s: %w", key.Name, err)
 			}
 		}
 
@@ -141,13 +147,13 @@ func (k *kmsFixture) Cleanup() error {
 				break
 			}
 			if err != nil {
-				return fmt.Errorf("failed to list versions for %s: %v", key.Name, err)
+				return fmt.Errorf("failed to list versions for %s: %w", key.Name, err)
 			}
 
 			if _, err := k.client.DestroyCryptoKeyVersion(ctx, &kmspb.DestroyCryptoKeyVersionRequest{
 				Name: version.Name,
 			}); err != nil {
-				return fmt.Errorf("failed to destroy version %s: %v", version.Name, err)
+				return fmt.Errorf("failed to destroy version %s: %w", version.Name, err)
 			}
 		}
 	}
@@ -300,6 +306,30 @@ func (k *kmsFixture) CreateSymmetricKey(parent string) (string, error) {
 	return key.Name, nil
 }
 
+// CreateHMACKey creates a new symmetric key.
+func (k *kmsFixture) CreateHMACKey(parent string) (string, error) {
+	ctx := context.Background()
+	key, err := k.client.CreateCryptoKey(ctx, &kmspb.CreateCryptoKeyRequest{
+		Parent:      parent,
+		CryptoKeyId: k.RandomID(),
+		CryptoKey: &kmspb.CryptoKey{
+			Purpose: kmspb.CryptoKey_MAC,
+			VersionTemplate: &kmspb.CryptoKeyVersionTemplate{
+				Algorithm: kmspb.CryptoKeyVersion_HMAC_SHA256,
+			},
+			Labels: map[string]string{
+				"foo": "bar",
+				"zip": "zap",
+			},
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return key.Name, nil
+}
+
 // WaitForKeyVersionReady waits for the given key version to no longer be in the
 // pending_generation state.
 func (k *kmsFixture) WaitForKeyVersionReady(name string) error {
@@ -310,7 +340,7 @@ func (k *kmsFixture) WaitForKeyVersionReady(name string) error {
 			Name: name,
 		})
 		if err != nil {
-			return fmt.Errorf("waiting for %s ready: %v", name, err)
+			return fmt.Errorf("waiting for %s ready: %w", name, err)
 		}
 
 		if result.State != kmspb.CryptoKeyVersion_PENDING_GENERATION {

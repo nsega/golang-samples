@@ -27,6 +27,8 @@ import (
 )
 
 // PubSubMessage is the payload of a Pub/Sub event.
+// See the documentation for more details:
+// https://cloud.google.com/pubsub/docs/reference/rest/v1/PubsubMessage
 type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
@@ -36,7 +38,7 @@ func FiniteRetryPubSub(ctx context.Context, m PubSubMessage) error {
 	meta, err := metadata.FromContext(ctx)
 	if err != nil {
 		// Assume an error on the function invoker and try again.
-		return fmt.Errorf("metadata.FromContext: %v", err)
+		return fmt.Errorf("metadata.FromContext: %w", err)
 	}
 
 	// Ignore events that are too old.

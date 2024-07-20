@@ -27,7 +27,7 @@ import (
 	"io"
 
 	automl "cloud.google.com/go/automl/apiv1"
-	automlpb "google.golang.org/genproto/googleapis/cloud/automl/v1"
+	"cloud.google.com/go/automl/apiv1/automlpb"
 )
 
 // getDataset gets a dataset.
@@ -39,7 +39,7 @@ func getDataset(w io.Writer, projectID string, location string, datasetID string
 	ctx := context.Background()
 	client, err := automl.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewClient: %v", err)
+		return fmt.Errorf("NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -49,7 +49,7 @@ func getDataset(w io.Writer, projectID string, location string, datasetID string
 
 	dataset, err := client.GetDataset(ctx, req)
 	if err != nil {
-		return fmt.Errorf("DeleteDataset: %v", err)
+		return fmt.Errorf("DeleteDataset: %w", err)
 	}
 
 	fmt.Fprintf(w, "Dataset name: %v\n", dataset.GetName())

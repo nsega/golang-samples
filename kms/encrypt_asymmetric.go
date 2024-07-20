@@ -26,7 +26,7 @@ import (
 	"io"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 )
 
 // encryptAsymmetric encrypts data on your local machine using an
@@ -39,8 +39,9 @@ func encryptAsymmetric(w io.Writer, name string, message string) error {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create kms client: %v", err)
+		return fmt.Errorf("failed to create kms client: %w", err)
 	}
+	defer client.Close()
 
 	// Retrieve the public key from Cloud KMS. This is the only operation that
 	// involves Cloud KMS. The remaining operations take place on your local
@@ -49,7 +50,7 @@ func encryptAsymmetric(w io.Writer, name string, message string) error {
 		Name: name,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get public key: %v", err)
+		return fmt.Errorf("failed to get public key: %w", err)
 	}
 
 	// Parse the public key. Note, this example assumes the public key is in the
@@ -57,7 +58,7 @@ func encryptAsymmetric(w io.Writer, name string, message string) error {
 	block, _ := pem.Decode([]byte(response.Pem))
 	publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return fmt.Errorf("failed to parse public key: %v", err)
+		return fmt.Errorf("failed to parse public key: %w", err)
 	}
 	rsaKey, ok := publicKey.(*rsa.PublicKey)
 	if !ok {
@@ -71,7 +72,7 @@ func encryptAsymmetric(w io.Writer, name string, message string) error {
 	// Encrypt data using the RSA public key.
 	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, rsaKey, plaintext, nil)
 	if err != nil {
-		return fmt.Errorf("rsa.EncryptOAEP: %v", err)
+		return fmt.Errorf("rsa.EncryptOAEP: %w", err)
 	}
 	fmt.Fprintf(w, "Encrypted ciphertext: %s", ciphertext)
 	return nil

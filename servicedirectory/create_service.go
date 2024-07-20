@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"io"
 
-	servicedirectory "cloud.google.com/go/servicedirectory/apiv1beta1"
-	sdpb "google.golang.org/genproto/googleapis/cloud/servicedirectory/v1beta1"
+	servicedirectory "cloud.google.com/go/servicedirectory/apiv1"
+	sdpb "cloud.google.com/go/servicedirectory/apiv1/servicedirectorypb"
 )
 
 func createService(w io.Writer, projectID string) error {
@@ -34,7 +34,7 @@ func createService(w io.Writer, projectID string) error {
 	// Create a registration client.
 	client, err := servicedirectory.NewRegistrationClient(ctx)
 	if err != nil {
-		return fmt.Errorf("ServiceDirectory.NewRegistrationClient: %v", err)
+		return fmt.Errorf("ServiceDirectory.NewRegistrationClient: %w", err)
 	}
 
 	defer client.Close()
@@ -43,7 +43,7 @@ func createService(w io.Writer, projectID string) error {
 		Parent:    fmt.Sprintf("projects/%s/locations/%s/namespaces/%s", projectID, location, namespaceID),
 		ServiceId: serviceID,
 		Service: &sdpb.Service{
-			Metadata: map[string]string{
+			Annotations: map[string]string{
 				"key1": "value1",
 				"key2": "value2",
 			},
@@ -51,7 +51,7 @@ func createService(w io.Writer, projectID string) error {
 	}
 	service, err := client.CreateService(ctx, req)
 	if err != nil {
-		return fmt.Errorf("CreateSerice: %v", err)
+		return fmt.Errorf("CreateSerice: %w", err)
 	}
 	fmt.Fprintf(w, "servicedirectory.Createservice result %s\n", service.Name)
 	return nil

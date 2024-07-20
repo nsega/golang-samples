@@ -15,14 +15,14 @@
 // Package settings contains snippets for working with CSCC organization settings.
 package settings
 
-// [START get_org_settings]
+// [START securitycenter_enable_asset_discovery]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
@@ -34,7 +34,7 @@ func enableAssetDiscovery(w io.Writer, orgID string) error {
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 
@@ -50,11 +50,11 @@ func enableAssetDiscovery(w io.Writer, orgID string) error {
 	}
 	settings, err := client.UpdateOrganizationSettings(ctx, req)
 	if err != nil {
-		return fmt.Errorf("UpdateOrganizationSettings: %v", err)
+		return fmt.Errorf("UpdateOrganizationSettings: %w", err)
 	}
 	fmt.Fprintf(w, "Updated Settings for: %s\n", settings.Name)
 	fmt.Fprintf(w, "Asset discovery on? %v\n", settings.EnableAssetDiscovery)
 	return nil
 }
 
-// [END get_org_settings]
+// [END securitycenter_enable_asset_discovery]

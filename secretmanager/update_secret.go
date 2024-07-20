@@ -21,7 +21,7 @@ import (
 	"io"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
@@ -33,8 +33,9 @@ func updateSecret(w io.Writer, name string) error {
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create secretmanager client: %v", err)
+		return fmt.Errorf("failed to create secretmanager client: %w", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &secretmanagerpb.UpdateSecretRequest{
@@ -52,7 +53,7 @@ func updateSecret(w io.Writer, name string) error {
 	// Call the API.
 	result, err := client.UpdateSecret(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to update secret: %v", err)
+		return fmt.Errorf("failed to update secret: %w", err)
 	}
 	fmt.Fprintf(w, "Updated secret: %s\n", result.Name)
 	return nil

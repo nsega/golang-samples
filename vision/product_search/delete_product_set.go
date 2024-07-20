@@ -23,7 +23,7 @@ import (
 	"io"
 
 	vision "cloud.google.com/go/vision/apiv1"
-	visionpb "google.golang.org/genproto/googleapis/cloud/vision/v1"
+	"cloud.google.com/go/vision/v2/apiv1/visionpb"
 )
 
 // deleteProductSet deletes a product set.
@@ -31,7 +31,7 @@ func deleteProductSet(w io.Writer, projectID string, location string, productSet
 	ctx := context.Background()
 	c, err := vision.NewProductSearchClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewProductSearchClient: %v", err)
+		return fmt.Errorf("NewProductSearchClient: %w", err)
 	}
 	defer c.Close()
 
@@ -40,7 +40,7 @@ func deleteProductSet(w io.Writer, projectID string, location string, productSet
 	}
 
 	if err = c.DeleteProductSet(ctx, req); err != nil {
-		return fmt.Errorf("NewProductSearchClient: %v", err)
+		return fmt.Errorf("NewProductSearchClient: %w", err)
 	}
 
 	fmt.Fprintln(w, "Product set deleted.")

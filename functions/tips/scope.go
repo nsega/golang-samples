@@ -18,10 +18,12 @@ package tips
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
 // [START functions_tips_scopes]
-// [START run_tips_global_scope]
+// [START cloudrun_tips_global_scope]
 
 // h is in the global (instance-wide) scope.
 var h string
@@ -30,6 +32,7 @@ var h string
 // an instance's cold start.
 func init() {
 	h = heavyComputation()
+	functions.HTTP("ScopeDemo", ScopeDemo)
 }
 
 // ScopeDemo is an example of using globally and locally
@@ -39,7 +42,7 @@ func ScopeDemo(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Global: %q, Local: %q", h, l)
 }
 
-// [END run_tips_global_scope]
+// [END cloudrun_tips_global_scope]
 // [END functions_tips_scopes]
 
 func heavyComputation() string {

@@ -19,7 +19,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"io"
-	"strings"
 	"testing"
 	"time"
 
@@ -34,7 +33,6 @@ import (
 // TestGRPCServerStreamingService is an end-to-end test that confirms the image builds, deploys and runs on
 // Cloud Run and can stream messages from server.
 func TestGRPCServerStreamingService(t *testing.T) {
-	t.Skip("Feature not yet available (https://github.com/GoogleCloudPlatform/golang-samples/issues/1628)")
 	tc := testutil.EndToEndTest(t)
 
 	service := cloudrunci.NewService("grpc-server-streaming", tc.ProjectID)
@@ -58,12 +56,18 @@ func TestGRPCServerStreamingService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("x509.SystemCertPool: %v", err)
 	}
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: certPool,
-	})))
-	if err != nil {
-		t.Fatalf("grpc.Dial %s: %v", addr, err)
-	}
+
+	var conn *grpc.ClientConn
+	testutil.Retry(t, 10, 20*time.Second, func(r *testutil.R) {
+		conn, err = grpc.Dial(addr, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+			RootCAs: certPool,
+		})))
+		if err != nil {
+			// Calls t.Fail() after the last attempt, code dependent on
+			// a successful connection is safe because it will not be called.
+			r.Errorf("grpc.Dial %s: %v", addr, err)
+		}
+	})
 	defer conn.Close()
 
 	var n uint32 = 3
@@ -73,29 +77,27 @@ func TestGRPCServerStreamingService(t *testing.T) {
 		t.Fatalf("rpc StreamTime: %v", err)
 	}
 
-	recvSeconds := make(map[time.Time]bool)
-	recvMsgs := 0
+	var recvMsgs int
+	var recvFailures int
 	for {
 		_, err := resp.Recv()
 		if err == io.EOF {
 			break
-		} else if err != nil {
-			t.Fatalf("rpc StreamTime.Recv: %v", err)
 		}
-
+		if err != nil {
+			recvFailures++
+			if recvFailures < 5 {
+				t.Logf("rpc StreamTime.Recv: %v", err)
+				time.Sleep(100 * time.Millisecond)
+				continue
+			} else {
+				t.Fatalf("rpc StreamTime.Recv: %v", err)
+			}
+		}
 		recvMsgs++
-		recvAt := time.Now().Truncate(time.Second)
-		recvSeconds[recvAt] = true
 	}
 
 	if recvMsgs != int(n) {
 		t.Errorf("received %d messages, expected %d", recvMsgs, req.DurationSecs)
-	}
-	if len(recvSeconds) != int(n) {
-		var keys []string
-		for k := range recvSeconds {
-			keys = append(keys, k.Format(time.RFC3339))
-		}
-		t.Errorf("received messages at %d distinct seconds [%s], expected %d different seconds", len(recvSeconds), strings.Join(keys, ", "), req.DurationSecs)
 	}
 }

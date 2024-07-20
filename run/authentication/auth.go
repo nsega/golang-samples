@@ -15,7 +15,7 @@
 // Package authentication contains the authentication samples for Cloud Run.
 package authentication
 
-// [START run_service_to_service_auth]
+// [START cloudrun_service_to_service_auth]
 import (
 	"fmt"
 	"net/http"
@@ -41,4 +41,4 @@ func makeGetRequest(serviceURL string) (*http.Response, error) {
 	return http.DefaultClient.Do(req)
 }
 
-// [END run_service_to_service_auth]
+// [END cloudrun_service_to_service_auth]

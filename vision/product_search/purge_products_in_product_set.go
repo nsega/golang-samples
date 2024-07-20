@@ -22,7 +22,7 @@ import (
 	"io"
 
 	vision "cloud.google.com/go/vision/apiv1"
-	visionpb "google.golang.org/genproto/googleapis/cloud/vision/v1"
+	"cloud.google.com/go/vision/v2/apiv1/visionpb"
 )
 
 // purgeProductsInProductSet deletes all products in a product set.
@@ -34,7 +34,7 @@ func purgeProductsInProductSet(w io.Writer, projectID string, location string, p
 	ctx := context.Background()
 	c, err := vision.NewProductSearchClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewProductSearchClient: %v", err)
+		return fmt.Errorf("NewProductSearchClient: %w", err)
 	}
 	defer c.Close()
 
@@ -51,12 +51,12 @@ func purgeProductsInProductSet(w io.Writer, projectID string, location string, p
 	// The purge operation is async.
 	op, err := c.PurgeProducts(ctx, req)
 	if err != nil {
-		return fmt.Errorf("PurgeProducts: %v", err)
+		return fmt.Errorf("PurgeProducts: %w", err)
 	}
 	fmt.Fprintf(w, "Processing operation name: %q\n", op.Name())
 
 	if err := op.Wait(ctx); err != nil {
-		return fmt.Errorf("Wait: %v", err)
+		return fmt.Errorf("Wait: %w", err)
 	}
 
 	fmt.Fprintf(w, "Deleted products in product set.\n")

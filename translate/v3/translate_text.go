@@ -16,29 +16,37 @@
 package v3
 
 // [START translate_v3_translate_text]
+// [START translate_v3_translate_text_0]
+// Imports the Google Cloud Translation library
 import (
 	"context"
 	"fmt"
 	"io"
 
 	translate "cloud.google.com/go/translate/apiv3"
-	translatepb "google.golang.org/genproto/googleapis/cloud/translate/v3"
+	"cloud.google.com/go/translate/apiv3/translatepb"
 )
 
-// translateText translates input text and returns translated text.
+// [END translate_v3_translate_text_0]
+
 func translateText(w io.Writer, projectID string, sourceLang string, targetLang string, text string) error {
 	// projectID := "my-project-id"
 	// sourceLang := "en-US"
 	// targetLang := "fr"
 	// text := "Text you wish to translate"
 
+	// [START translate_v3_translate_text_1]
+	// Instantiates a client
 	ctx := context.Background()
 	client, err := translate.NewTranslationClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewTranslationClient: %v", err)
+		return fmt.Errorf("NewTranslationClient: %w", err)
 	}
 	defer client.Close()
+	// [END translate_v3_translate_text_1]
 
+	// [START translate_v3_translate_text_2]
+	// Construct request
 	req := &translatepb.TranslateTextRequest{
 		Parent:             fmt.Sprintf("projects/%s/locations/global", projectID),
 		SourceLanguageCode: sourceLang,
@@ -49,13 +57,16 @@ func translateText(w io.Writer, projectID string, sourceLang string, targetLang 
 
 	resp, err := client.TranslateText(ctx, req)
 	if err != nil {
-		return fmt.Errorf("TranslateText: %v", err)
+		return fmt.Errorf("TranslateText: %w", err)
 	}
+	// [END translate_v3_translate_text_2]
 
+	// [START translate_v3_translate_text_3]
 	// Display the translation for each input text provided
 	for _, translation := range resp.GetTranslations() {
 		fmt.Fprintf(w, "Translated text: %v\n", translation.GetTranslatedText())
 	}
+	// [END translate_v3_translate_text_3]
 
 	return nil
 }

@@ -22,8 +22,8 @@ import (
 	"io"
 
 	automl "cloud.google.com/go/automl/apiv1"
+	longrunning "cloud.google.com/go/longrunning/autogen/longrunningpb"
 	"google.golang.org/api/iterator"
-	"google.golang.org/genproto/googleapis/longrunning"
 )
 
 // listOperationStatus lists existing operations' status.
@@ -34,7 +34,7 @@ func listOperationStatus(w io.Writer, projectID string, location string) error {
 	ctx := context.Background()
 	client, err := automl.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewClient: %v", err)
+		return fmt.Errorf("NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -51,7 +51,7 @@ func listOperationStatus(w io.Writer, projectID string, location string) error {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("ListOperations.Next: %v", err)
+			return fmt.Errorf("ListOperations.Next: %w", err)
 		}
 
 		fmt.Fprintf(w, "Name: %v\n", op.GetName())

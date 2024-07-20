@@ -23,7 +23,7 @@ import (
 	"io"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3"
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
+	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 )
 
 // getMetricDescriptor gets the descriptor for the given metricType and prints
@@ -33,14 +33,15 @@ func getMetricDescriptor(w io.Writer, projectID, metricType string) error {
 	ctx := context.Background()
 	c, err := monitoring.NewMetricClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewMetricClient: %v", err)
+		return fmt.Errorf("NewMetricClient: %w", err)
 	}
+	defer c.Close()
 	req := &monitoringpb.GetMetricDescriptorRequest{
 		Name: fmt.Sprintf("projects/%s/metricDescriptors/%s", projectID, metricType),
 	}
 	resp, err := c.GetMetricDescriptor(ctx, req)
 	if err != nil {
-		return fmt.Errorf("could not get custom metric: %v", err)
+		return fmt.Errorf("could not get custom metric: %w", err)
 	}
 
 	fmt.Fprintf(w, "Name: %v\n", resp.GetName())

@@ -14,14 +14,14 @@
 
 package findings
 
-// [START get_source]
+// [START securitycenter_get_source]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 )
 
 // getSource retrieves a source by its resource name and print it to w.
@@ -32,7 +32,7 @@ func getSource(w io.Writer, sourceName string) error {
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 
@@ -41,7 +41,7 @@ func getSource(w io.Writer, sourceName string) error {
 	}
 	source, err := client.GetSource(ctx, req)
 	if err != nil {
-		return fmt.Errorf("GetSource: %v", err)
+		return fmt.Errorf("GetSource: %w", err)
 	}
 	fmt.Fprintf(w, "Source: %v\n", source.Name)
 	fmt.Fprintf(w, "Display Name: %v\n", source.DisplayName)
@@ -49,4 +49,4 @@ func getSource(w io.Writer, sourceName string) error {
 	return nil
 }
 
-// [END get_source]
+// [END securitycenter_get_source]

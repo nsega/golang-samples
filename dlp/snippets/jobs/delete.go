@@ -21,7 +21,7 @@ import (
 	"io"
 
 	dlp "cloud.google.com/go/dlp/apiv2"
-	dlppb "google.golang.org/genproto/googleapis/privacy/dlp/v2"
+	"cloud.google.com/go/dlp/apiv2/dlppb"
 )
 
 // deleteJob deletes the job with the given name.
@@ -30,13 +30,14 @@ func deleteJob(w io.Writer, jobName string) error {
 	ctx := context.Background()
 	client, err := dlp.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("dlp.NewClient: %v", err)
+		return fmt.Errorf("dlp.NewClient: %w", err)
 	}
+	defer client.Close()
 	req := &dlppb.DeleteDlpJobRequest{
 		Name: jobName,
 	}
 	if err = client.DeleteDlpJob(ctx, req); err != nil {
-		return fmt.Errorf("DeleteDlpJob: %v", err)
+		return fmt.Errorf("DeleteDlpJob: %w", err)
 	}
 	fmt.Fprintf(w, "Successfully deleted job")
 	return nil

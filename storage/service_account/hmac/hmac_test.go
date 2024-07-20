@@ -16,15 +16,18 @@ package hmac
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/golang-samples/internal/testutil"
-
 	"cloud.google.com/go/storage"
+	"github.com/GoogleCloudPlatform/golang-samples/internal/testutil"
+	"google.golang.org/api/googleapi"
+	"google.golang.org/api/iterator"
 )
 
 var serviceAccountEmail = os.Getenv("GOLANG_SAMPLES_SERVICE_ACCOUNT_EMAIL")
@@ -39,12 +42,19 @@ func TestMain(m *testing.M) {
 	storageClient, _ = storage.NewClient(ctx)
 	defer storageClient.Close()
 
+	// Delete all existing HMAC keys in the project to avoid running into
+	// resource constraints during the test.
+	projectID := os.Getenv("GOLANG_SAMPLES_PROJECT_ID")
+	if err := deleteAllKeys(projectID); err != nil {
+		fmt.Printf("deleting existing keys: %v", err)
+	}
+
 	os.Exit(m.Run())
 }
 
 func TestListKeys(t *testing.T) {
 	tc := testutil.SystemTest(t)
-	key, err := createTestKey(tc.ProjectID)
+	key, err := createTestKey(tc.ProjectID, t)
 	defer deleteTestKey(key)
 	if err != nil {
 		t.Fatalf("Error in key creation: %s", err)
@@ -67,10 +77,10 @@ func TestCreateKey(t *testing.T) {
 	defer deleteTestKey(key)
 
 	if err != nil {
-		t.Errorf("createHMACKey raised error: %s", err)
+		t.Fatalf("createHMACKey raised error: %s", err)
 	}
 	if key == nil {
-		t.Errorf("Returned nil key.")
+		t.Fatalf("Returned nil key.")
 	}
 	if key.State != "ACTIVE" {
 		t.Errorf("State of key is %s, should be ACTIVE", key.State)
@@ -79,10 +89,10 @@ func TestCreateKey(t *testing.T) {
 
 func TestActivateKey(t *testing.T) {
 	tc := testutil.SystemTest(t)
-	key, err := createTestKey(tc.ProjectID)
+	key, err := createTestKey(tc.ProjectID, t)
 	defer deleteTestKey(key)
 	if err != nil {
-		t.Errorf("Error in key creation: %s", err)
+		t.Fatalf("Error in key creation: %s", err)
 	}
 
 	// Key must first be deactivated in order to update to active state.
@@ -93,7 +103,7 @@ func TestActivateKey(t *testing.T) {
 	key, err = activateHMACKey(ioutil.Discard, key.AccessID, key.ProjectID)
 
 	if err != nil {
-		t.Errorf("Error in activateHMACKey: %s", err)
+		t.Fatalf("Error in activateHMACKey: %s", err)
 	}
 	if key.State != "ACTIVE" {
 		t.Errorf("State of key is %s, should be ACTIVE", key.State)
@@ -102,15 +112,15 @@ func TestActivateKey(t *testing.T) {
 
 func TestDeactivateKey(t *testing.T) {
 	tc := testutil.SystemTest(t)
-	key, err := createTestKey(tc.ProjectID)
+	key, err := createTestKey(tc.ProjectID, t)
 	defer deleteTestKey(key)
 	if err != nil {
-		t.Errorf("Error in key creation: %s", err)
+		t.Fatalf("Error in key creation: %s", err)
 	}
 
 	key, err = deactivateHMACKey(ioutil.Discard, key.AccessID, key.ProjectID)
 	if err != nil {
-		t.Errorf("Error in deactivateHMACKey: %s", err)
+		t.Fatalf("Error in deactivateHMACKey: %s", err)
 	}
 	if key.State != "INACTIVE" {
 		t.Errorf("State of key is %s, should be INACTIVE", key.State)
@@ -119,57 +129,109 @@ func TestDeactivateKey(t *testing.T) {
 
 func TestGetKey(t *testing.T) {
 	tc := testutil.SystemTest(t)
-	key, err := createTestKey(tc.ProjectID)
+	key, err := createTestKey(tc.ProjectID, t)
 	defer deleteTestKey(key)
 	if err != nil {
-		t.Errorf("Error in key creation: %s", err)
+		t.Fatalf("Error in key creation: %s", err)
 	}
 
-	key, err = getHMACKey(ioutil.Discard, key.AccessID, key.ProjectID)
-	if err != nil {
-		t.Errorf("Error in getHMACKey: %s", err)
-	}
-	if key == nil {
-		t.Errorf("Returned nil key.")
-	}
+	testutil.Retry(t, 10, 10*time.Second, func(r *testutil.R) {
+		gotKey, err := getHMACKey(ioutil.Discard, key.AccessID, key.ProjectID)
+		if err != nil {
+			r.Errorf("Error in getHMACKey: %s", err)
+			return
+		}
+		if gotKey == nil {
+			r.Errorf("Returned nil key.")
+		}
+	})
 }
 
 func TestDeleteKey(t *testing.T) {
 	tc := testutil.SystemTest(t)
-	key, err := createTestKey(tc.ProjectID)
+	key, err := createTestKey(tc.ProjectID, t)
 	defer deleteTestKey(key)
 	if err != nil {
-		t.Errorf("Error in key creation: %s", err)
+		t.Fatalf("Error in key creation: %s", err)
 	}
 
 	// Keys must be in INACTIVE state before deletion.
 	ctx := context.Background()
 	handle := storageClient.HMACKeyHandle(key.ProjectID, key.AccessID)
-	handle.Update(ctx, storage.HMACKeyAttrsToUpdate{State: "INACTIVE"})
-
-	err = deleteHMACKey(ioutil.Discard, key.AccessID, key.ProjectID)
+	_, err = handle.Update(ctx, storage.HMACKeyAttrsToUpdate{State: "INACTIVE"})
 	if err != nil {
-		t.Errorf("Error in deleteHMACKey: %s", err)
-	}
-	key, _ = handle.Get(ctx)
-	if key.State != "DELETED" {
-		t.Errorf("State of key is %s, should be DELETED", key.State)
+		t.Errorf("Error updating HMAC key: %s", err)
 	}
 
+	// Retry as HMAC key updates can take up to 3 minutes to propagate.
+	testutil.Retry(t, 18, 10*time.Second, func(r *testutil.R) {
+		err = deleteHMACKey(io.Discard, key.AccessID, key.ProjectID)
+		if err != nil {
+			// 400 error with reason "invalid" means the key was already deleted;
+			// this can happen if there was a previous call that returned an error
+			// but succeeded on the server side.
+			var ge *googleapi.Error
+			if errors.As(err, &ge) {
+				if ge.Code == 400 && len(ge.Errors) > 0 && ge.Errors[0].Reason == "invalid" {
+					return
+				}
+			}
+			r.Errorf("Error in deleteHMACKey: %s", err)
+		}
+		key, _ = handle.Get(ctx)
+		if key != nil && key.State != "DELETED" {
+			r.Errorf("State of key is %s, should be DELETED", key.State)
+		}
+
+	})
+}
+
+// Delete all HMAC keys in the project.
+func deleteAllKeys(projectID string) error {
+	iter := storageClient.ListHMACKeys(context.Background(), projectID)
+	for {
+		key, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("ListHMACKeys: %w", err)
+		}
+		deleteTestKey(key)
+	}
+	return nil
 }
 
 // Create a key for testing purposes.
-func createTestKey(projectID string) (*storage.HMACKey, error) {
+func createTestKey(projectID string, t *testing.T) (*storage.HMACKey, error) {
 	ctx := context.Background()
-	key, err := storageClient.CreateHMACKey(ctx, projectID, serviceAccountEmail)
-	if err != nil {
-		return nil, fmt.Errorf("storage.NewClient: %v", err)
-	}
-	return key, nil
+	var key *storage.HMACKey
+	var err error
+
+	testutil.Retry(t, 10, 10*time.Second, func(r *testutil.R) {
+		key, err = storageClient.CreateHMACKey(ctx, projectID, serviceAccountEmail)
+		if err != nil {
+			r.Errorf("Error in CreateHMACKey: %v", err)
+			return
+		}
+
+		// Nil key check should not happen but is added to handle flaky
+		// "nil pointer dereference" error.
+		if key == nil {
+			r.Errorf("CreateHMACKey returned nil key.")
+			err = errors.New("CreateHMACKey returned nil key")
+			return
+		}
+	})
+
+	return key, err
 }
 
 // Deactivate and delete the given key. Should operate as a teardown method.
 func deleteTestKey(key *storage.HMACKey) {
+	if key == nil {
+		return
+	}
 	ctx := context.Background()
 	handle := storageClient.HMACKeyHandle(key.ProjectID, key.AccessID)
 	if key.State == "ACTIVE" {

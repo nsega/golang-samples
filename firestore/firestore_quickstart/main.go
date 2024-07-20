@@ -15,9 +15,10 @@
 // Sample firestore_quickstart demonstrates how to connect to Firestore, and add and list documents.
 package main
 
-// [START fs_initialize]
+// [START firestore_setup_client_create]
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 
@@ -30,6 +31,12 @@ func createClient(ctx context.Context) *firestore.Client {
 	// Sets your Google Cloud Platform project ID.
 	projectID := "YOUR_PROJECT_ID"
 
+	// [END firestore_setup_client_create]
+	// Override with -project flags
+	flag.StringVar(&projectID, "project", projectID, "The Google Cloud Platform project ID.")
+	flag.Parse()
+
+	// [START firestore_setup_client_create]
 	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
@@ -39,7 +46,7 @@ func createClient(ctx context.Context) *firestore.Client {
 	return client
 }
 
-// [END fs_initialize]
+// [END firestore_setup_client_create]
 
 func main() {
 	// Get a Firestore client.
@@ -47,7 +54,7 @@ func main() {
 	client := createClient(ctx)
 	defer client.Close()
 
-	// [START fs_add_data_1]
+	// [START firestore_setup_dataset_pt1]
 	_, _, err := client.Collection("users").Add(ctx, map[string]interface{}{
 		"first": "Ada",
 		"last":  "Lovelace",
@@ -56,9 +63,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed adding alovelace: %v", err)
 	}
-	// [END fs_add_data_1]
+	// [END firestore_setup_dataset_pt1]
 
-	// [START fs_add_data_2]
+	// [START firestore_setup_dataset_pt2]
 	_, _, err = client.Collection("users").Add(ctx, map[string]interface{}{
 		"first":  "Alan",
 		"middle": "Mathison",
@@ -68,9 +75,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed adding aturing: %v", err)
 	}
-	// [END fs_add_data_2]
+	// [END firestore_setup_dataset_pt2]
 
-	// [START fs_get_all_users]
+	// [START firestore_setup_dataset_read]
 	iter := client.Collection("users").Documents(ctx)
 	for {
 		doc, err := iter.Next()
@@ -82,5 +89,5 @@ func main() {
 		}
 		fmt.Println(doc.Data())
 	}
-	// [END fs_get_all_users]
+	// [END firestore_setup_dataset_read]
 }

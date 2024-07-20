@@ -24,13 +24,27 @@
 package cloudrunci
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os/exec"
 	"path"
+	"strings"
 	"time"
+
+	"cloud.google.com/go/logging/logadmin"
+	"google.golang.org/api/iterator"
+)
+
+// labels are used in operation-related logs.
+const (
+	labelOperationDeploy        = "deploy service"
+	labelOperationBuild         = "build container image"
+	labelOperationDeleteService = "delete service"
+	labelOperationDeleteImage   = "delete container image"
+	labelOperationGetURL        = "get url"
 )
 
 // Service describes a Cloud Run service
@@ -57,6 +71,12 @@ type Service struct {
 	// Additional runtime environment variable overrides for the app.
 	Env EnvVars
 
+	// Build the image without Dockerfile, using Google Cloud buildpacks.
+	AsBuildpack bool
+
+	// Strictly HTTP/2 serving
+	HTTP2 bool
+
 	deployed bool     // Whether the service has been deployed.
 	built    bool     // Whether the container image has been built.
 	url      *url.URL // The url of the deployed service.
@@ -81,18 +101,81 @@ func (s *Service) Deployed() bool {
 	return s.deployed
 }
 
-// Request issues an HTTP request to the deployed service.
-func (s *Service) Request(method, path string) (*http.Response, error) {
+// RetryOptions holds options for Service.Request's retry behavior
+type RetryOptions struct {
+	MaxAttempts  int
+	Delay        time.Duration
+	ShouldAccept func(*http.Response) bool
+}
+
+func getDefaultRetryOptions() RetryOptions {
+	return RetryOptions{
+		MaxAttempts:  5,
+		Delay:        20 * time.Second,
+		ShouldAccept: Accept2xx,
+	}
+}
+
+// Accept2xx returns true for responses in the 200 class of http response codes
+func Accept2xx(r *http.Response) bool {
+	return r.StatusCode >= 200 && r.StatusCode < 300
+}
+
+// AcceptNonServerError returns true for any non-500 http response
+func AcceptNonServerError(r *http.Response) bool {
+	return r.StatusCode < 500
+}
+
+func WithAttempts(n int) func(*RetryOptions) {
+	return func(r *RetryOptions) {
+		r.MaxAttempts = n
+	}
+}
+func WithDelay(d time.Duration) func(*RetryOptions) {
+	return func(r *RetryOptions) {
+		r.Delay = d
+	}
+}
+func WithAcceptFunc(f func(*http.Response) bool) func(*RetryOptions) {
+	return func(r *RetryOptions) {
+		r.ShouldAccept = f
+	}
+}
+
+// Do executes the provided http.Request using the default http client
+func (s *Service) Do(req *http.Request, opts ...func(*RetryOptions)) (*http.Response, error) {
 	if !s.deployed {
 		return nil, errors.New("Request called before Deploy")
 	}
+	options := getDefaultRetryOptions()
+	for _, fn := range opts {
+		fn(&options)
+	}
+	var lastSeen error
+	resp := &http.Response{}
+	for i := 0; i < options.MaxAttempts; i++ {
+		defaultClient := &http.Client{}
+
+		resp, lastSeen = defaultClient.Do(req)
+		if lastSeen != nil {
+			continue
+		}
+		if options.ShouldAccept(resp) {
+			return resp, nil
+		}
+		time.Sleep(options.Delay)
+	}
+	// Too many attempts, return the last result.
+	return resp, fmt.Errorf("no acceptable response after %d retries: %w", options.MaxAttempts, lastSeen)
+}
+
+// Request issues an HTTP request to the deployed service.
+func (s *Service) Request(method string, path string, opts ...func(*RetryOptions)) (*http.Response, error) {
 	req, err := s.NewRequest(method, path)
 	if err != nil {
-		return nil, err
+		return &http.Response{}, err
 	}
-	defaultClient := &http.Client{}
-
-	return defaultClient.Do(req)
+	return s.Do(req, opts...)
 }
 
 // NewRequest creates a new http.Request for the deployed service.
@@ -102,7 +185,7 @@ func (s *Service) NewRequest(method, path string) (*http.Request, error) {
 	}
 	url, err := s.URL(path)
 	if err != nil {
-		return nil, fmt.Errorf("service.URL: %v", err)
+		return nil, fmt.Errorf("service.URL: %w", err)
 	}
 	return s.Platform.NewRequest(method, url)
 }
@@ -112,7 +195,7 @@ func (s *Service) NewRequest(method, path string) (*http.Request, error) {
 func (s *Service) URL(p string) (string, error) {
 	u, err := s.ParsedURL()
 	if err != nil {
-		return "", fmt.Errorf("service.ParsedURL: %v", err)
+		return "", fmt.Errorf("service.ParsedURL: %w", err)
 	}
 	modified := &url.URL{}
 	*modified = *u
@@ -125,7 +208,7 @@ func (s *Service) URL(p string) (string, error) {
 func (s *Service) Host() (string, error) {
 	u, err := s.ParsedURL()
 	if err != nil {
-		return "", fmt.Errorf("service.ParsedURL: %v", err)
+		return "", fmt.Errorf("service.ParsedURL: %w", err)
 	}
 	return u.Host + ":443", nil
 }
@@ -137,7 +220,7 @@ func (s *Service) ParsedURL() (*url.URL, error) {
 		return nil, errors.New("URL called before Deploy")
 	}
 	if s.url == nil {
-		out, err := gcloud(s.operationLabel("get url"), s.urlCmd())
+		out, err := gcloud(s.operationLabel(labelOperationGetURL), s.urlCmd())
 		if err != nil {
 			return nil, fmt.Errorf("gcloud: %s: %q", s.Name, err)
 		}
@@ -145,7 +228,7 @@ func (s *Service) ParsedURL() (*url.URL, error) {
 		sURL := string(out)
 		u, err := url.Parse(sURL)
 		if err != nil {
-			return nil, fmt.Errorf("url.Parse: %v", err)
+			return nil, fmt.Errorf("url.Parse: %w", err)
 		}
 
 		s.url = u
@@ -193,7 +276,7 @@ func (s *Service) Deploy() error {
 		}
 	}
 
-	if _, err := gcloud(s.operationLabel("deploy service"), s.deployCmd()); err != nil {
+	if _, err := gcloud(s.operationLabel(labelOperationDeploy), s.deployCmd()); err != nil {
 		return fmt.Errorf("gcloud: %s: %q", s.version(), err)
 	}
 
@@ -217,7 +300,8 @@ func (s *Service) Build() error {
 		s.Image = fmt.Sprintf("gcr.io/%s/%s:%s", s.ProjectID, s.Name, runID)
 	}
 
-	if _, err := gcloud(s.operationLabel("build container image"), s.buildCmd()); err != nil {
+	if out, err := gcloud(s.operationLabel(labelOperationBuild), s.buildCmd()); err != nil {
+		fmt.Print(string(out))
 		return fmt.Errorf("gcloud: %s: %q", s.Image, err)
 	}
 	s.built = true
@@ -234,7 +318,7 @@ func (s *Service) Clean() error {
 		return err
 	}
 
-	if _, err := gcloud(s.operationLabel("delete service"), s.deleteServiceCmd()); err != nil {
+	if _, err := gcloud(s.operationLabel(labelOperationDeleteService), s.deleteServiceCmd()); err != nil {
 		return fmt.Errorf("gcloud: %v: %q", s.version(), err)
 	}
 	s.deployed = false
@@ -258,6 +342,7 @@ func (s *Service) operationLabel(op string) string {
 func (s *Service) deployCmd() *exec.Cmd {
 	args := append([]string{
 		"--quiet",
+		"alpha", // TODO until --use-http2 goes GA
 		"run",
 		"deploy",
 		s.version(),
@@ -275,6 +360,9 @@ func (s *Service) deployCmd() *exec.Cmd {
 	if s.AllowUnauthenticated {
 		args = append(args, "--allow-unauthenticated")
 	}
+	if s.HTTP2 {
+		args = append(args, "--use-http2")
+	}
 
 	// NOTE: if the "beta" component is not available, and this is run in parallel,
 	// gcloud will attempt to install those components multiple
@@ -287,12 +375,17 @@ func (s *Service) deployCmd() *exec.Cmd {
 func (s *Service) buildCmd() *exec.Cmd {
 	args := []string{
 		"--quiet",
+		"beta", // TODO until --pack goes to GA
 		"builds",
 		"submit",
 		"--project",
 		s.ProjectID,
-		"--tag",
-		s.Image,
+	}
+
+	if !s.AsBuildpack {
+		args = append(args, "--tag", s.Image)
+	} else {
+		args = append(args, "--pack=image="+s.Image)
 	}
 
 	// NOTE: if the "beta" component is not available, and this is run in parallel,
@@ -358,4 +451,43 @@ func (s *Service) urlCmd() *exec.Cmd {
 	cmd := exec.Command(gcloudBin, args...)
 	cmd.Dir = s.Dir
 	return cmd
+}
+
+func (s *Service) LogEntries(filter string, find string, maxAttempts int) (bool, error) {
+	ctx := context.Background()
+	client, err := logadmin.NewClient(ctx, s.ProjectID)
+	if err != nil {
+		return false, fmt.Errorf("logadmin.NewClient: %w", err)
+	}
+	defer client.Close()
+
+	preparedFilter := fmt.Sprintf(`resource.type="cloud_run_revision" resource.labels.service_name="%s" %s`, s.version(), filter)
+	fmt.Printf("Using log filter: %s\n", preparedFilter)
+
+	fmt.Println("Waiting for logs...")
+	time.Sleep(3 * time.Minute)
+
+	for i := 1; i < maxAttempts; i++ {
+		fmt.Printf("Attempt #%d\n", i)
+		it := client.Entries(ctx, logadmin.Filter(preparedFilter))
+		for {
+			entry, err := it.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return false, fmt.Errorf("it.Next: %w", err)
+			}
+			payload := fmt.Sprintf("%v", entry.Payload)
+			if len(payload) > 0 {
+				fmt.Printf("entry.Payload: %v\n", entry.Payload)
+			}
+			if strings.Contains(payload, find) {
+				fmt.Printf("%q log entry found.\n", find)
+				return true, nil
+			}
+		}
+		time.Sleep(15 * time.Second)
+	}
+	return false, nil
 }

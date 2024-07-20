@@ -22,9 +22,9 @@ import (
 	"time"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/golang/protobuf/ptypes/timestamp"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // createKeyRotationSchedule creates a key with a rotation schedule.
@@ -36,8 +36,9 @@ func createKeyRotationSchedule(w io.Writer, parent, id string) error {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create kms client: %v", err)
+		return fmt.Errorf("failed to create kms client: %w", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &kmspb.CreateCryptoKeyRequest{
@@ -51,13 +52,13 @@ func createKeyRotationSchedule(w io.Writer, parent, id string) error {
 
 			// Rotate the key every 30 days
 			RotationSchedule: &kmspb.CryptoKey_RotationPeriod{
-				RotationPeriod: &duration.Duration{
+				RotationPeriod: &durationpb.Duration{
 					Seconds: int64(60 * 60 * 24 * 30), // 30 days
 				},
 			},
 
 			// Start the first rotation in 24 hours
-			NextRotationTime: &timestamp.Timestamp{
+			NextRotationTime: &timestamppb.Timestamp{
 				Seconds: time.Now().Add(24 * time.Hour).Unix(),
 			},
 		},
@@ -66,7 +67,7 @@ func createKeyRotationSchedule(w io.Writer, parent, id string) error {
 	// Call the API.
 	result, err := client.CreateCryptoKey(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to create key: %v", err)
+		return fmt.Errorf("failed to create key: %w", err)
 	}
 	fmt.Fprintf(w, "Created key: %s\n", result.Name)
 	return nil

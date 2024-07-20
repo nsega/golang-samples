@@ -22,7 +22,7 @@ import (
 	"io"
 
 	automl "cloud.google.com/go/automl/apiv1"
-	automlpb "google.golang.org/genproto/googleapis/cloud/automl/v1"
+	"cloud.google.com/go/automl/apiv1/automlpb"
 )
 
 // languageTextClassificationCreateDataset creates a dataset for text classification.
@@ -34,7 +34,7 @@ func languageTextClassificationCreateDataset(w io.Writer, projectID string, loca
 	ctx := context.Background()
 	client, err := automl.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewClient: %v", err)
+		return fmt.Errorf("NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -55,13 +55,13 @@ func languageTextClassificationCreateDataset(w io.Writer, projectID string, loca
 
 	op, err := client.CreateDataset(ctx, req)
 	if err != nil {
-		return fmt.Errorf("CreateDataset: %v", err)
+		return fmt.Errorf("CreateDataset: %w", err)
 	}
 	fmt.Fprintf(w, "Processing operation name: %q\n", op.Name())
 
 	dataset, err := op.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("Wait: %v", err)
+		return fmt.Errorf("Wait: %w", err)
 	}
 
 	fmt.Fprintf(w, "Dataset name: %v\n", dataset.GetName())

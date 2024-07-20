@@ -21,8 +21,8 @@ import (
 	"io"
 
 	talent "cloud.google.com/go/talent/apiv4beta1"
+	"cloud.google.com/go/talent/apiv4beta1/talentpb"
 	"github.com/golang/protobuf/ptypes/duration"
-	talentpb "google.golang.org/genproto/googleapis/cloud/talent/v4beta1"
 	"google.golang.org/genproto/googleapis/type/latlng"
 )
 
@@ -33,8 +33,9 @@ func commuteSearch(w io.Writer, projectID, companyID string) error {
 	// Initialize a jobService client.
 	c, err := talent.NewJobClient(ctx)
 	if err != nil {
-		return fmt.Errorf("talent.NewJobClient: %v", err)
+		return fmt.Errorf("talent.NewJobClient: %w", err)
 	}
+	defer c.Close()
 
 	// Construct a jobQuery request with a commute filter.
 	jobQuery := &talentpb.JobQuery{
@@ -70,7 +71,7 @@ func commuteSearch(w io.Writer, projectID, companyID string) error {
 
 	resp, err := c.SearchJobs(ctx, req)
 	if err != nil {
-		return fmt.Errorf("SearchJobs: %v", err)
+		return fmt.Errorf("SearchJobs: %w", err)
 	}
 
 	for _, job := range resp.GetMatchingJobs() {

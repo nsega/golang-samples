@@ -18,10 +18,11 @@ package secretmanager
 import (
 	"context"
 	"fmt"
+	"hash/crc32"
 	"io"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 )
 
 // addSecretVersion adds a new secret version to the given secret with the
@@ -31,26 +32,32 @@ func addSecretVersion(w io.Writer, parent string) error {
 
 	// Declare the payload to store.
 	payload := []byte("my super secret data")
+	// Compute checksum, use Castagnoli polynomial. Providing a checksum
+	// is optional.
+	crc32c := crc32.MakeTable(crc32.Castagnoli)
+	checksum := int64(crc32.Checksum(payload, crc32c))
 
 	// Create the client.
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create secretmanager client: %v", err)
+		return fmt.Errorf("failed to create secretmanager client: %w", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &secretmanagerpb.AddSecretVersionRequest{
 		Parent: parent,
 		Payload: &secretmanagerpb.SecretPayload{
-			Data: payload,
+			Data:       payload,
+			DataCrc32C: &checksum,
 		},
 	}
 
 	// Call the API.
 	result, err := client.AddSecretVersion(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to add secret version: %v", err)
+		return fmt.Errorf("failed to add secret version: %w", err)
 	}
 	fmt.Fprintf(w, "Added secret version: %s\n", result.Name)
 	return nil

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// [START run_imageproc_handler_setup]
+// [START cloudrun_imageproc_handler_setup]
 
 // Package imagemagick contains an example of using ImageMagick to process a
 // file uploaded to Cloud Storage.
@@ -28,7 +28,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	vision "cloud.google.com/go/vision/apiv1"
-	visionpb "google.golang.org/genproto/googleapis/cloud/vision/v1"
+	"cloud.google.com/go/vision/v2/apiv1/visionpb"
 )
 
 // Global API clients used across function invocations.
@@ -52,9 +52,9 @@ func init() {
 	}
 }
 
-// [END run_imageproc_handler_setup]
+// [END cloudrun_imageproc_handler_setup]
 
-// [START run_imageproc_handler_analyze]
+// [START cloudrun_imageproc_handler_analyze]
 
 // GCSEvent is the payload of a GCS event.
 type GCSEvent struct {
@@ -73,7 +73,7 @@ func BlurOffensiveImages(ctx context.Context, e GCSEvent) error {
 
 	resp, err := visionClient.DetectSafeSearch(ctx, img, nil)
 	if err != nil {
-		return fmt.Errorf("AnnotateImage: %v", err)
+		return fmt.Errorf("AnnotateImage: %w", err)
 	}
 
 	if resp.GetAdult() == visionpb.Likelihood_VERY_LIKELY ||
@@ -84,9 +84,9 @@ func BlurOffensiveImages(ctx context.Context, e GCSEvent) error {
 	return nil
 }
 
-// [END run_imageproc_handler_analyze]
+// [END cloudrun_imageproc_handler_analyze]
 
-// [START run_imageproc_handler_blur]
+// [START cloudrun_imageproc_handler_blur]
 
 // blur blurs the image stored at gs://inputBucket/name and stores the result in
 // gs://outputBucket/name.
@@ -94,7 +94,7 @@ func blur(ctx context.Context, inputBucket, outputBucket, name string) error {
 	inputBlob := storageClient.Bucket(inputBucket).Object(name)
 	r, err := inputBlob.NewReader(ctx)
 	if err != nil {
-		return fmt.Errorf("NewReader: %v", err)
+		return fmt.Errorf("NewReader: %w", err)
 	}
 
 	outputBlob := storageClient.Bucket(outputBucket).Object(name)
@@ -107,7 +107,7 @@ func blur(ctx context.Context, inputBucket, outputBucket, name string) error {
 	cmd.Stdout = w
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("cmd.Run: %v", err)
+		return fmt.Errorf("cmd.Run: %w", err)
 	}
 
 	log.Printf("Blurred image uploaded to gs://%s/%s", outputBlob.BucketName(), outputBlob.ObjectName())
@@ -115,4 +115,4 @@ func blur(ctx context.Context, inputBucket, outputBucket, name string) error {
 	return nil
 }
 
-// [END run_imageproc_handler_blur]
+// [END cloudrun_imageproc_handler_blur]

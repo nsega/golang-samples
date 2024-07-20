@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	host                = flag.String("host", "", "The API host. Required.")
+	url                 = flag.String("url", "", "The request url. Required.")
 	audience            = flag.String("audience", "", "The audience for the JWT. equired")
 	serviceAccountFile  = flag.String("service-account-file", "", "Path to service account JSON file. Required.")
 	serviceAccountEmail = flag.String("service-account-email", "", "Path email associated with the service account. Required.")
@@ -42,19 +42,19 @@ var (
 func main() {
 	flag.Parse()
 
-	if *audience == "" || *host == "" || *serviceAccountFile == "" || *serviceAccountEmail == "" {
-		fmt.Println("requires: --host, --audience, --service-account-file, --service-account-email")
+	if *audience == "" || *url == "" || *serviceAccountFile == "" || *serviceAccountEmail == "" {
+		fmt.Println("requires: --url, --audience, --service-account-file, --service-account-email")
 		os.Exit(1)
 	}
 	jwt, err := generateJWT(*serviceAccountFile, *serviceAccountEmail, *audience, 3600)
 	if err != nil {
 		log.Fatal(err)
 	}
-	resp, err := makeJWTRequest(jwt, *host)
+	resp, err := makeJWTRequest(jwt, *url)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%s Response: %s", *host, resp)
+	fmt.Printf("%s Response: %s", *url, resp)
 }
 
 // [START endpoints_generate_jwt_sa]
@@ -86,16 +86,16 @@ func generateJWT(saKeyfile, saEmail, audience string, expiryLength int64) (strin
 	// Extract the RSA private key from the service account keyfile.
 	sa, err := ioutil.ReadFile(saKeyfile)
 	if err != nil {
-		return "", fmt.Errorf("Could not read service account file: %v", err)
+		return "", fmt.Errorf("Could not read service account file: %w", err)
 	}
 	conf, err := google.JWTConfigFromJSON(sa)
 	if err != nil {
-		return "", fmt.Errorf("Could not parse service account JSON: %v", err)
+		return "", fmt.Errorf("Could not parse service account JSON: %w", err)
 	}
 	block, _ := pem.Decode(conf.PrivateKey)
 	parsedKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return "", fmt.Errorf("private key parse error: %v", err)
+		return "", fmt.Errorf("private key parse error: %w", err)
 	}
 	rsaKey, ok := parsedKey.(*rsa.PrivateKey)
 	// Sign the JWT with the service account's private key.
@@ -117,19 +117,19 @@ func makeJWTRequest(signedJWT, url string) (string, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to create HTTP request: %v", err)
+		return "", fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 	req.Header.Add("Authorization", "Bearer "+signedJWT)
 	req.Header.Add("content-type", "application/json")
 
 	response, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("HTTP request failed: %v", err)
+		return "", fmt.Errorf("HTTP request failed: %w", err)
 	}
 	defer response.Body.Close()
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse HTTP response: %v", err)
+		return "", fmt.Errorf("failed to parse HTTP response: %w", err)
 	}
 	return string(responseData), nil
 }

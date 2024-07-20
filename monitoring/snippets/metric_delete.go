@@ -22,7 +22,7 @@ import (
 	"io"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3"
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
+	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 )
 
 // deleteMetric deletes the given metric. name should be of the form
@@ -33,12 +33,13 @@ func deleteMetric(w io.Writer, name string) error {
 	if err != nil {
 		return err
 	}
+	defer c.Close()
 	req := &monitoringpb.DeleteMetricDescriptorRequest{
 		Name: name,
 	}
 
 	if err := c.DeleteMetricDescriptor(ctx, req); err != nil {
-		return fmt.Errorf("could not delete metric: %v", err)
+		return fmt.Errorf("could not delete metric: %w", err)
 	}
 	fmt.Fprintf(w, "Deleted metric: %q\n", name)
 	return nil

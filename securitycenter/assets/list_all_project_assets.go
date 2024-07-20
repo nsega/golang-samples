@@ -14,15 +14,15 @@
 
 package assets
 
-// [START list_project_assets]
+// [START securitycenter_list_assets_with_filter]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"google.golang.org/api/iterator"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
 )
 
 // listAllProjectAssets lists all current GCP project assets in orgID and
@@ -33,10 +33,14 @@ func listAllProjectAssets(w io.Writer, orgID string) error {
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 	req := &securitycenterpb.ListAssetsRequest{
+		// Parent must be in one of the following formats:
+		//		"organizations/{orgId}"
+		//		"projects/{projectId}"
+		//		"folders/{folderId}"
 		Parent: fmt.Sprintf("organizations/%s", orgID),
 		Filter: `security_center_properties.resource_type="google.cloud.resourcemanager.Project"`,
 	}
@@ -49,7 +53,7 @@ func listAllProjectAssets(w io.Writer, orgID string) error {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("ListAssets: %v", err)
+			return fmt.Errorf("ListAssets: %w", err)
 		}
 		asset := result.Asset
 		properties := asset.SecurityCenterProperties
@@ -61,4 +65,4 @@ func listAllProjectAssets(w io.Writer, orgID string) error {
 	return nil
 }
 
-// [END list_project_assets]
+// [END securitycenter_list_assets_with_filter]

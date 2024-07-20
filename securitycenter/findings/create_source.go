@@ -14,14 +14,14 @@
 
 package findings
 
-// [START create_source]
+// [START securitycenter_create_source]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 )
 
 // createSource creates a new source for organization orgID. orgID is
@@ -32,7 +32,7 @@ func createSource(w io.Writer, orgID string) error {
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 
@@ -45,7 +45,7 @@ func createSource(w io.Writer, orgID string) error {
 	}
 	source, err := client.CreateSource(ctx, req)
 	if err != nil {
-		return fmt.Errorf("CreateSource: %v", err)
+		return fmt.Errorf("CreateSource: %w", err)
 	}
 
 	fmt.Fprintf(w, "New source created: %s\n", source.Name)
@@ -53,4 +53,4 @@ func createSource(w io.Writer, orgID string) error {
 	return nil
 }
 
-// [END create_source]
+// [END securitycenter_create_source]

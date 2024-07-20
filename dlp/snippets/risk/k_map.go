@@ -23,9 +23,9 @@ import (
 	"time"
 
 	dlp "cloud.google.com/go/dlp/apiv2"
+	"cloud.google.com/go/dlp/apiv2/dlppb"
 	"cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/ptypes/empty"
-	dlppb "google.golang.org/genproto/googleapis/privacy/dlp/v2"
 )
 
 // riskKMap runs K Map on the given data.
@@ -41,20 +41,39 @@ func riskKMap(w io.Writer, projectID, dataProject, pubSubTopic, pubSubSub, datas
 	ctx := context.Background()
 	client, err := dlp.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("dlp.NewClient: %v", err)
+		return fmt.Errorf("dlp.NewClient: %w", err)
 	}
 
 	// Create a PubSub Client used to listen for when the inspect job finishes.
 	pubsubClient, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
-		return fmt.Errorf("Error creating PubSub client: %v", err)
+		return err
 	}
 	defer pubsubClient.Close()
 
 	// Create a PubSub subscription we can use to listen for messages.
-	s, err := setupPubSub(projectID, pubSubTopic, pubSubSub)
+	// Create the Topic if it doesn't exist.
+	t := pubsubClient.Topic(pubSubTopic)
+	topicExists, err := t.Exists(ctx)
 	if err != nil {
-		return fmt.Errorf("setupPubSub: %v", err)
+		return err
+	}
+	if !topicExists {
+		if t, err = pubsubClient.CreateTopic(ctx, pubSubTopic); err != nil {
+			return err
+		}
+	}
+
+	// Create the Subscription if it doesn't exist.
+	s := pubsubClient.Subscription(pubSubSub)
+	subExists, err := s.Exists(ctx)
+	if err != nil {
+		return err
+	}
+	if !subExists {
+		if s, err = pubsubClient.CreateSubscription(ctx, pubSubSub, pubsub.SubscriptionConfig{Topic: t}); err != nil {
+			return err
+		}
 	}
 
 	// topic is the PubSub topic string where messages should be sent.
@@ -109,10 +128,9 @@ func riskKMap(w io.Writer, projectID, dataProject, pubSubTopic, pubSubSub, datas
 	// Create the risk job.
 	j, err := client.CreateDlpJob(ctx, req)
 	if err != nil {
-		return fmt.Errorf("CreateDlpJob: %v", err)
+		return fmt.Errorf("CreateDlpJob: %w", err)
 	}
 	fmt.Fprintf(w, "Created job: %v\n", j.GetName())
-
 	// Wait for the risk job to finish by waiting for a PubSub message.
 	// This only waits for 10 minutes. For long jobs, consider using a truly
 	// asynchronous execution model such as Cloud Functions.
@@ -120,6 +138,7 @@ func riskKMap(w io.Writer, projectID, dataProject, pubSubTopic, pubSubSub, datas
 	defer cancel()
 	err = s.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		// If this is the wrong job, do not process the result.
+
 		if msg.Attributes["DlpJobName"] != j.GetName() {
 			msg.Nack()
 			return
@@ -129,6 +148,7 @@ func riskKMap(w io.Writer, projectID, dataProject, pubSubTopic, pubSubSub, datas
 		j, err := client.GetDlpJob(ctx, &dlppb.GetDlpJobRequest{
 			Name: j.GetName(),
 		})
+
 		if err != nil {
 			fmt.Fprintf(w, "GetDlpJob: %v", err)
 			return
@@ -151,7 +171,7 @@ func riskKMap(w io.Writer, projectID, dataProject, pubSubTopic, pubSubSub, datas
 		cancel()
 	})
 	if err != nil {
-		return fmt.Errorf("Recieve: %v", err)
+		return fmt.Errorf("Recieve: %w", err)
 	}
 	return nil
 }

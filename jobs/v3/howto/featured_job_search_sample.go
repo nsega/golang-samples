@@ -24,7 +24,7 @@ import (
 	talent "google.golang.org/api/jobs/v3"
 )
 
-// [START featured_job]
+// [START job_featured_job]
 
 // constructFeaturedJob constructs a job as featured/promoted one.
 func constructFeaturedJob(companyName string, jobTitle string) *talent.Job {
@@ -43,9 +43,9 @@ func constructFeaturedJob(companyName string, jobTitle string) *talent.Job {
 	return job
 }
 
-// [END featured_job]
+// [END job_featured_job]
 
-// [START search_featured_job]
+// [START job_search_featured_job]
 
 // searchFeaturedJobs searches for jobs with query.
 func searchFeaturedJobs(w io.Writer, projectID, companyName, query string) (*talent.SearchJobsResponse, error) {
@@ -53,12 +53,12 @@ func searchFeaturedJobs(w io.Writer, projectID, companyName, query string) (*tal
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	jobQuery := &talent.JobQuery{
@@ -88,7 +88,7 @@ func searchFeaturedJobs(w io.Writer, projectID, companyName, query string) (*tal
 	}
 	resp, err := service.Projects.Jobs.Search(parent, req).Do()
 	if err != nil {
-		return nil, fmt.Errorf("failed to search for jobs with query %q: %v", query, err)
+		return nil, fmt.Errorf("failed to search for jobs with query %q: %w", query, err)
 	}
 
 	fmt.Fprintln(w, "Jobs:")
@@ -99,4 +99,4 @@ func searchFeaturedJobs(w io.Writer, projectID, companyName, query string) (*tal
 	return resp, nil
 }
 
-// [END search_featured_job]
+// [END job_search_featured_job]

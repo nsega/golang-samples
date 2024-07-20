@@ -62,8 +62,8 @@ type Bookshelf struct {
 	// logWriter is used for request logging and can be overridden for tests.
 	//
 	// See https://cloud.google.com/logging/docs/setup/go for how to use the
-	// Stackdriver logging client. Output to stdout and stderr is automaticaly
-	// sent to Stackdriver when running on App Engine.
+	// Cloud Logging client. Output to stdout and stderr is automaticaly
+	// sent to Cloud Logging when running on App Engine.
 	logWriter io.Writer
 
 	errorClient *errorreporting.Client
@@ -81,7 +81,7 @@ func NewBookshelf(projectID string, db BookDatabase) (*Bookshelf, error) {
 	bucketName := projectID + "_bucket"
 	storageClient, err := storage.NewClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("storage.NewClient: %v", err)
+		return nil, fmt.Errorf("storage.NewClient: %w", err)
 	}
 
 	errorClient, err := errorreporting.NewClient(ctx, projectID, errorreporting.Config{
@@ -91,7 +91,7 @@ func NewBookshelf(projectID string, db BookDatabase) (*Bookshelf, error) {
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("errorreporting.NewClient: %v", err)
+		return nil, fmt.Errorf("errorreporting.NewClient: %w", err)
 	}
 
 	b := &Bookshelf{

@@ -21,20 +21,21 @@ import (
 	"io"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 	fieldmask "google.golang.org/genproto/protobuf/field_mask"
 )
 
 // disableKeyVersion disables the specified key version on Cloud KMS.
 func disableKeyVersion(w io.Writer, name string) error {
-	// parent := "projects/my-project/locations/us-east1/keyRings/my-key-ring/cryptoKeys/my-key/cryptoKeyVersions/123"
+	// name := "projects/my-project/locations/us-east1/keyRings/my-key-ring/cryptoKeys/my-key/cryptoKeyVersions/123"
 
 	// Create the client.
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create kms client: %v", err)
+		return fmt.Errorf("failed to create kms client: %w", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &kmspb.UpdateCryptoKeyVersionRequest{
@@ -50,7 +51,7 @@ func disableKeyVersion(w io.Writer, name string) error {
 	// Call the API.
 	result, err := client.UpdateCryptoKeyVersion(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to update key version: %v", err)
+		return fmt.Errorf("failed to update key version: %w", err)
 	}
 	fmt.Fprintf(w, "Disabled key version: %s\n", result)
 	return nil

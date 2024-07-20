@@ -14,14 +14,14 @@
 
 package notifications
 
-// [START scc_get_notification_config]
+// [START securitycenter_get_notification_config]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 )
 
 func getNotificationConfig(w io.Writer, orgID string, notificationConfigID string) error {
@@ -32,21 +32,26 @@ func getNotificationConfig(w io.Writer, orgID string, notificationConfigID strin
 	client, err := securitycenter.NewClient(ctx)
 
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close()
 
+	// Parent must be in one of the following formats:
+	//		"organizations/{orgId}"
+	//		"projects/{projectId}"
+	//		"folders/{folderId}"
+	parent := fmt.Sprintf("organizations/%s", orgID)
 	req := &securitycenterpb.GetNotificationConfigRequest{
-		Name: fmt.Sprintf("organizations/%s/notificationConfigs/%s", orgID, notificationConfigID),
+		Name: fmt.Sprintf("%s/notificationConfigs/%s", parent, notificationConfigID),
 	}
 
 	notificationConfig, err := client.GetNotificationConfig(ctx, req)
 	if err != nil {
-		return fmt.Errorf("Failed to retrieve notification config: %v", err)
+		return fmt.Errorf("Failed to retrieve notification config: %w", err)
 	}
 	fmt.Fprintln(w, "Received config: ", notificationConfig)
 
 	return nil
 }
 
-// [END scc_get_notification_config]
+// [END securitycenter_get_notification_config]

@@ -14,7 +14,7 @@
 
 package assets
 
-// [START list_project_assets_at_time]
+// [START securitycenter_list_assets_at_time]
 import (
 	"context"
 	"fmt"
@@ -22,9 +22,9 @@ import (
 	"time"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/api/iterator"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
 )
 
 // listAllProjectAssets lists all GCP Projects in orgID at asOf time and prints
@@ -35,17 +35,23 @@ func listAllProjectAssetsAtTime(w io.Writer, orgID string, asOf time.Time) error
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 
 	// Convert the time to a Timestamp protobuf
 	readTime, err := ptypes.TimestampProto(asOf)
 	if err != nil {
-		return fmt.Errorf("TimestampProto(%v): %v", asOf, err)
+		return fmt.Errorf("TimestampProto(%v): %w", asOf, err)
 	}
 
+	// You can also list assets in a project/ folder. To do so, modify the parent and
+	// filter condition.
 	req := &securitycenterpb.ListAssetsRequest{
+		// Parent must be in one of the following formats:
+		//		"organizations/{orgId}"
+		//		"projects/{projectId}"
+		//		"folders/{folderId}"
 		Parent:   fmt.Sprintf("organizations/%s", orgID),
 		Filter:   `security_center_properties.resource_type="google.cloud.resourcemanager.Project"`,
 		ReadTime: readTime,
@@ -59,7 +65,7 @@ func listAllProjectAssetsAtTime(w io.Writer, orgID string, asOf time.Time) error
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("ListAssets: %v", err)
+			return fmt.Errorf("ListAssets: %w", err)
 		}
 		asset := result.Asset
 		properties := asset.SecurityCenterProperties
@@ -71,4 +77,4 @@ func listAllProjectAssetsAtTime(w io.Writer, orgID string, asOf time.Time) error
 	return nil
 }
 
-// [END list_project_assets_at_time]
+// [END securitycenter_list_assets_at_time]

@@ -43,7 +43,7 @@ func dicomWebSearchStudies(w io.Writer, projectID, location, datasetID, dicomSto
 
 	healthcareService, err := healthcare.NewService(ctx)
 	if err != nil {
-		return fmt.Errorf("healthcare.NewService: %v", err)
+		return fmt.Errorf("healthcare.NewService: %w", err)
 	}
 
 	storesService := healthcareService.Projects.Locations.Datasets.DicomStores
@@ -57,21 +57,25 @@ func dicomWebSearchStudies(w io.Writer, projectID, location, datasetID, dicomSto
 	patientName := queryParamOpt{key: "PatientName", value: "Sally Zhang"}
 	resp, err := call.Do(patientName)
 	if err != nil {
-		return fmt.Errorf("Get: %v", err)
+		return fmt.Errorf("Get: %w", err)
 	}
 
 	defer resp.Body.Close()
 
 	respBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("ioutil.ReadAll: %v", err)
+		return fmt.Errorf("ioutil.ReadAll: %w", err)
 	}
 
 	if resp.StatusCode > 299 {
 		return fmt.Errorf("SearchForStudies: status %d %s: %s", resp.StatusCode, resp.Status, respBytes)
 	}
 	respString := string(respBytes)
-	fmt.Fprintf(w, "Found studies: %s\n", respString)
+	if len(respString) > 0 {
+		fmt.Fprintf(w, "Found studies: %s\n", respString)
+	} else {
+		fmt.Println("No studies found.")
+	}
 
 	return nil
 }

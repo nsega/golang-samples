@@ -21,7 +21,7 @@ import (
 	"io"
 
 	talent "cloud.google.com/go/talent/apiv4beta1"
-	talentpb "google.golang.org/genproto/googleapis/cloud/talent/v4beta1"
+	"cloud.google.com/go/talent/apiv4beta1/talentpb"
 )
 
 // customRankingSearch searches for jobs based on custom ranking.
@@ -31,8 +31,9 @@ func customRankingSearch(w io.Writer, projectID, companyID string) error {
 	// Initialize a jobService client.
 	c, err := talent.NewJobClient(ctx)
 	if err != nil {
-		return fmt.Errorf("taleng.NewJobClient: %v", err)
+		return fmt.Errorf("taleng.NewJobClient: %w", err)
 	}
+	defer c.Close()
 
 	// Construct a searchJobs request.
 	req := &talentpb.SearchJobsRequest{
@@ -61,7 +62,7 @@ func customRankingSearch(w io.Writer, projectID, companyID string) error {
 
 	resp, err := c.SearchJobs(ctx, req)
 	if err != nil {
-		return fmt.Errorf("SearchJobs: %v", err)
+		return fmt.Errorf("SearchJobs: %w", err)
 	}
 
 	for _, job := range resp.GetMatchingJobs() {

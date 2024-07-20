@@ -25,13 +25,13 @@ import (
 )
 
 // makePublic gives all users read access to an object.
-func makePublic(w io.Writer, bucket, object string, entity storage.ACLEntity, role storage.ACLRole) error {
+func makePublic(w io.Writer, bucket, object string) error {
 	// bucket := "bucket-name"
 	// object := "object-name"
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("storage.NewClient: %v", err)
+		return fmt.Errorf("storage.NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -39,8 +39,8 @@ func makePublic(w io.Writer, bucket, object string, entity storage.ACLEntity, ro
 	defer cancel()
 
 	acl := client.Bucket(bucket).Object(object).ACL()
-	if err := acl.Set(ctx, entity, role); err != nil {
-		return fmt.Errorf("ACLHandle.Set: %v", err)
+	if err := acl.Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
+		return fmt.Errorf("ACLHandle.Set: %w", err)
 	}
 	fmt.Fprintf(w, "Blob %v is now publicly accessible.\n", object)
 	return nil

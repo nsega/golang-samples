@@ -14,7 +14,7 @@
 
 package findings
 
-// [START create_finding_with_source_properties]
+// [START securitycenter_create_finding_with_source_properties]
 import (
 	"context"
 	"fmt"
@@ -22,9 +22,9 @@ import (
 	"time"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"github.com/golang/protobuf/ptypes"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
 )
 
 // createFindingWithProperties demonstrates how to create a new security
@@ -37,13 +37,13 @@ func createFindingWithProperties(w io.Writer, sourceName string) error {
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 	// Use now as the eventTime for the security finding.
 	eventTime, err := ptypes.TimestampProto(time.Now())
 	if err != nil {
-		return fmt.Errorf("TimestampProto: %v", err)
+		return fmt.Errorf("TimestampProto: %w", err)
 	}
 
 	req := &securitycenterpb.CreateFindingRequest{
@@ -72,7 +72,7 @@ func createFindingWithProperties(w io.Writer, sourceName string) error {
 
 	finding, err := client.CreateFinding(ctx, req)
 	if err != nil {
-		return fmt.Errorf("CreateFinding: %v", err)
+		return fmt.Errorf("CreateFinding: %w", err)
 	}
 	fmt.Fprintf(w, "New finding created: %s\n", finding.Name)
 	fmt.Fprintf(w, "Event time (Epoch Seconds): %d\n", eventTime.Seconds)
@@ -84,4 +84,4 @@ func createFindingWithProperties(w io.Writer, sourceName string) error {
 	return nil
 }
 
-// [END create_finding_with_source_properties]
+// [END securitycenter_create_finding_with_source_properties]

@@ -30,15 +30,18 @@ func pullMsgsDeadLetterDeliveryAttempt(w io.Writer, projectID, subID string) err
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
-		return fmt.Errorf("pubsub.NewClient: %v", err)
+		return fmt.Errorf("pubsub.NewClient: %w", err)
 	}
+	defer client.Close()
 
-	// Receive messages for 10 seconds.
+	// Receive messages for 10 seconds, which simplifies testing.
+	// Comment this out in production, since `Receive` should
+	// be used as a long running operation.
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	sub := client.Subscription(subID)
-	err = sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+	err = sub.Receive(ctx, func(_ context.Context, msg *pubsub.Message) {
 		// When dead lettering is enabled, the delivery attempt field is a pointer to the
 		// the number of times the service has attempted to delivery a message.
 		// Otherwise, the field is nil.
@@ -48,7 +51,7 @@ func pullMsgsDeadLetterDeliveryAttempt(w io.Writer, projectID, subID string) err
 		msg.Ack()
 	})
 	if err != nil {
-		return fmt.Errorf("got error in Receive: %v", err)
+		return fmt.Errorf("got error in Receive: %w", err)
 	}
 	return nil
 }

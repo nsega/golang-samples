@@ -22,7 +22,7 @@ import (
 	"io"
 
 	translate "cloud.google.com/go/translate/apiv3"
-	translatepb "google.golang.org/genproto/googleapis/cloud/translate/v3"
+	"cloud.google.com/go/translate/apiv3/translatepb"
 )
 
 // translateTextWithModel translates input text and returns translated text.
@@ -37,7 +37,7 @@ func translateTextWithModel(w io.Writer, projectID string, location string, sour
 	ctx := context.Background()
 	client, err := translate.NewTranslationClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewTranslationClient: %v", err)
+		return fmt.Errorf("NewTranslationClient: %w", err)
 	}
 	defer client.Close()
 
@@ -52,7 +52,7 @@ func translateTextWithModel(w io.Writer, projectID string, location string, sour
 
 	resp, err := client.TranslateText(ctx, req)
 	if err != nil {
-		return fmt.Errorf("TranslateText: %v", err)
+		return fmt.Errorf("TranslateText: %w", err)
 	}
 
 	// Display the translation for each input text provided

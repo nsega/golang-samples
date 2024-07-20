@@ -20,23 +20,25 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"hash/crc32"
 	"io"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 )
 
 // getPublicKey retrieves the public key from an asymmetric key pair on
 // Cloud KMS.
 func getPublicKey(w io.Writer, name string) error {
-	// parent := "projects/my-project/locations/us-east1/keyRings/my-key-ring/cryptoKeys/my-key/cryptoKeyVersions/123"
+	// name := "projects/my-project/locations/us-east1/keyRings/my-key-ring/cryptoKeys/my-key/cryptoKeyVersions/123"
 
 	// Create the client.
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create kms client: %v", err)
+		return fmt.Errorf("failed to create kms client: %w", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &kmspb.GetPublicKeyRequest{
@@ -46,21 +48,30 @@ func getPublicKey(w io.Writer, name string) error {
 	// Call the API.
 	result, err := client.GetPublicKey(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to get public key: %v", err)
+		return fmt.Errorf("failed to get public key: %w", err)
 	}
 
 	// The 'Pem' field is the raw string representation of the public key.
-	key := result.Pem
+	// Convert 'Pem' into bytes for further processing.
+	key := []byte(result.Pem)
 
-	//
+	// Optional, but recommended: perform integrity verification on result.
+	// For more details on ensuring E2E in-transit integrity to and from Cloud KMS visit:
+	// https://cloud.google.com/kms/docs/data-integrity-guidelines
+	crc32c := func(data []byte) uint32 {
+		t := crc32.MakeTable(crc32.Castagnoli)
+		return crc32.Checksum(data, t)
+	}
+	if int64(crc32c(key)) != result.PemCrc32C.Value {
+		return fmt.Errorf("getPublicKey: response corrupted in-transit")
+	}
+
 	// Optional - parse the public key. This transforms the string key into a Go
 	// PublicKey.
-	//
-
-	block, _ := pem.Decode([]byte(key))
+	block, _ := pem.Decode(key)
 	publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return fmt.Errorf("failed to parse public key: %v", err)
+		return fmt.Errorf("failed to parse public key: %w", err)
 	}
 	fmt.Fprintf(w, "Retrieved public key: %v\n", publicKey)
 	return nil

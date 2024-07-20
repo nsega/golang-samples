@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
-	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
+	taskspb "cloud.google.com/go/cloudtasks/apiv2/cloudtaskspb"
 )
 
 // createTask creates a new task in your App Engine queue.
@@ -32,7 +32,7 @@ func createTask(projectID, locationID, queueID, message string) (*taskspb.Task, 
 	ctx := context.Background()
 	client, err := cloudtasks.NewClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("NewClient: %v", err)
+		return nil, fmt.Errorf("NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -59,7 +59,7 @@ func createTask(projectID, locationID, queueID, message string) (*taskspb.Task, 
 
 	createdTask, err := client.CreateTask(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("cloudtasks.CreateTask: %v", err)
+		return nil, fmt.Errorf("cloudtasks.CreateTask: %w", err)
 	}
 
 	return createdTask, nil

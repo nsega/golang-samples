@@ -23,8 +23,8 @@ import (
 	"io"
 
 	vision "cloud.google.com/go/vision/apiv1"
+	"cloud.google.com/go/vision/v2/apiv1/visionpb"
 	"google.golang.org/api/iterator"
-	visionpb "google.golang.org/genproto/googleapis/cloud/vision/v1"
 )
 
 // listProducts lists products.
@@ -32,7 +32,7 @@ func listProducts(w io.Writer, projectID string, location string) error {
 	ctx := context.Background()
 	c, err := vision.NewProductSearchClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewProductSearchClient: %v", err)
+		return fmt.Errorf("NewProductSearchClient: %w", err)
 	}
 	defer c.Close()
 
@@ -47,7 +47,7 @@ func listProducts(w io.Writer, projectID string, location string) error {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("Next: %v", err)
+			return fmt.Errorf("Next: %w", err)
 		}
 
 		fmt.Fprintf(w, "Product name: %s\n", resp.Name)

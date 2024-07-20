@@ -14,14 +14,14 @@
 
 package findings
 
-// [START update_source]
+// [START securitycenter_update_source]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
@@ -34,7 +34,7 @@ func updateSource(w io.Writer, sourceName string) error {
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 
@@ -51,7 +51,7 @@ func updateSource(w io.Writer, sourceName string) error {
 	}
 	source, err := client.UpdateSource(ctx, req)
 	if err != nil {
-		return fmt.Errorf("UpdateSource: %v", err)
+		return fmt.Errorf("UpdateSource: %w", err)
 	}
 	fmt.Fprintf(w, "Source Name: %s, ", source.Name)
 	fmt.Fprintf(w, "Display name: %s, ", source.DisplayName)
@@ -60,4 +60,4 @@ func updateSource(w io.Writer, sourceName string) error {
 	return nil
 }
 
-// [END update_source]
+// [END securitycenter_update_source]

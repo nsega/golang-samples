@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 
 	video "cloud.google.com/go/videointelligence/apiv1"
+	videopb "cloud.google.com/go/videointelligence/apiv1/videointelligencepb"
 	"github.com/golang/protobuf/ptypes"
-	videopb "google.golang.org/genproto/googleapis/cloud/videointelligence/v1"
 )
 
 // [START video_analyze_labels]
@@ -31,10 +31,11 @@ func label(w io.Writer, file string) error {
 	ctx := context.Background()
 	client, err := video.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("video.NewClient: %v", err)
+		return fmt.Errorf("video.NewClient: %w", err)
 	}
+	defer client.Close()
 
-	fileBytes, err := ioutil.ReadFile(file)
+	fileBytes, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -46,12 +47,12 @@ func label(w io.Writer, file string) error {
 		InputContent: fileBytes,
 	})
 	if err != nil {
-		return fmt.Errorf("AnnotateVideo: %v", err)
+		return fmt.Errorf("AnnotateVideo: %w", err)
 	}
 
 	resp, err := op.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("Wait: %v", err)
+		return fmt.Errorf("Wait: %w", err)
 	}
 
 	printLabels := func(labels []*videopb.LabelAnnotation) {
@@ -89,8 +90,9 @@ func shotChange(w io.Writer, file string) error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
-	fileBytes, err := ioutil.ReadFile(file)
+	fileBytes, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -128,8 +130,9 @@ func explicitContent(w io.Writer, file string) error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
-	fileBytes, err := ioutil.ReadFile(file)
+	fileBytes, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -159,7 +162,7 @@ func explicitContent(w io.Writer, file string) error {
 	return nil
 }
 
-// [START video_analyze_speech_transcription]
+// [START video_speech_transcription]
 
 func speechTranscription(w io.Writer, file string) error {
 	ctx := context.Background()
@@ -167,8 +170,9 @@ func speechTranscription(w io.Writer, file string) error {
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
-	fileBytes, err := ioutil.ReadFile(file)
+	fileBytes, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -222,4 +226,4 @@ func speechTranscription(w io.Writer, file string) error {
 	return nil
 }
 
-// [END video_analyze_speech_transcription]
+// [END video_speech_transcription]

@@ -14,14 +14,14 @@
 
 package notifications
 
-// [START scc_update_notification_config]
+// [START securitycenter_update_notification_config]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
@@ -34,15 +34,20 @@ func updateNotificationConfig(w io.Writer, orgID string, notificationConfigID st
 	client, err := securitycenter.NewClient(ctx)
 
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close()
 
 	updatedDescription := "Updated sample config"
 	updatedFilter := `state = "INACTIVE"`
+	// Parent must be in one of the following formats:
+	//		"organizations/{orgId}"
+	//		"projects/{projectId}"
+	//		"folders/{folderId}"
+	parent := fmt.Sprintf("organizations/%s", orgID)
 	req := &securitycenterpb.UpdateNotificationConfigRequest{
 		NotificationConfig: &securitycenterpb.NotificationConfig{
-			Name:        fmt.Sprintf("organizations/%s/notificationConfigs/%s", orgID, notificationConfigID),
+			Name:        fmt.Sprintf("%s/notificationConfigs/%s", parent, notificationConfigID),
 			Description: updatedDescription,
 			PubsubTopic: updatedPubsubTopic,
 			NotifyConfig: &securitycenterpb.NotificationConfig_StreamingConfig_{
@@ -58,7 +63,7 @@ func updateNotificationConfig(w io.Writer, orgID string, notificationConfigID st
 
 	notificationConfig, err := client.UpdateNotificationConfig(ctx, req)
 	if err != nil {
-		return fmt.Errorf("Failed to update notification config: %v", err)
+		return fmt.Errorf("Failed to update notification config: %w", err)
 	}
 
 	fmt.Fprintln(w, "Updated NotificationConfig: ", notificationConfig)
@@ -66,4 +71,4 @@ func updateNotificationConfig(w io.Writer, orgID string, notificationConfigID st
 	return nil
 }
 
-// [END scc_update_notification_config]
+// [END securitycenter_update_notification_config]

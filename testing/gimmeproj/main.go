@@ -24,6 +24,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -33,10 +34,12 @@ import (
 var (
 	metaProject = flag.String("project", "", "Meta-project that manages the pool.")
 	format      = flag.String("output", "", "Output format for selected operations. Options include: list")
+	waitTime    = flag.Duration("timeout", 30*time.Minute, "maximum wait time for leasing a project")
 	datastore   *ds.Client
 
-	version   = "dev"
-	buildDate = "unknown"
+	version       = "dev"
+	buildDate     = "unknown"
+	ErrNoProjects = errors.New("could not find a free project")
 )
 
 type Pool struct {
@@ -134,7 +137,7 @@ Administrative commands:
 	var err error
 	datastore, err = ds.NewClient(ctx, *metaProject)
 	if err != nil {
-		return fmt.Errorf("datastore.NewClient: %v", err)
+		return fmt.Errorf("datastore.NewClient: %w", err)
 	}
 
 	switch flag.Arg(0) {
@@ -142,7 +145,21 @@ Administrative commands:
 		fmt.Fprintln(os.Stderr, usage.Error())
 		return nil
 	case "lease":
-		return lease(ctx, flag.Arg(1))
+		// When leasing, keep trying until we reach our configured timeout
+		ctx, cancel := context.WithTimeout(ctx, *waitTime)
+		defer cancel()
+		for ctx.Err() == nil {
+			err := lease(ctx, flag.Arg(1))
+			if err == nil {
+				return err
+			} else if errors.Is(err, ErrNoProjects) {
+				log.Printf("Temporary error: %v\n", err)
+				time.Sleep(30 * time.Second)
+			} else {
+				return err
+			}
+		}
+		return ctx.Err()
 	case "pool-add":
 		return addToPool(ctx, flag.Arg(1))
 	case "pool-rm":
@@ -164,10 +181,10 @@ func withPool(ctx context.Context, f func(pool *Pool) error) error {
 		if err := tx.Get(key, &pool); err != nil {
 			if err == ds.ErrNoSuchEntity {
 				if _, err := tx.Put(key, &pool); err != nil {
-					return fmt.Errorf("Initial Pool.Put: %v", err)
+					return fmt.Errorf("Initial Pool.Put: %w", err)
 				}
 			} else {
-				return fmt.Errorf("Pool.Get: %v", err)
+				return fmt.Errorf("Pool.Get: %w", err)
 			}
 		}
 		if err := f(&pool); err != nil {
@@ -175,12 +192,12 @@ func withPool(ctx context.Context, f func(pool *Pool) error) error {
 		}
 		_, err := tx.Put(key, &pool)
 		if err != nil {
-			return fmt.Errorf("Pool.Put: %v", err)
+			return fmt.Errorf("Pool.Put: %w", err)
 		}
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("datastore: %v", err)
+		return fmt.Errorf("datastore: %w", err)
 	}
 	return nil
 }
@@ -191,7 +208,7 @@ func lease(ctx context.Context, duration string) error {
 	}
 	d, err := time.ParseDuration(duration)
 	if err != nil {
-		return fmt.Errorf("Could not parse duration: %v", err)
+		return fmt.Errorf("Could not parse duration: %w", err)
 	}
 
 	var proj *Project
@@ -199,7 +216,7 @@ func lease(ctx context.Context, duration string) error {
 		var ok bool
 		proj, ok = pool.Lease(d)
 		if !ok {
-			return errors.New("Could not find a free project. Try again soon.")
+			return ErrNoProjects
 		}
 		return nil
 	})
@@ -238,7 +255,7 @@ func status(ctx context.Context) error {
 		for _, proj := range pool.Projects {
 			exp := ""
 			if !proj.Expired() {
-				secs := proj.LeaseExpiry.Sub(time.Now()) / time.Second * time.Second
+				secs := time.Until(proj.LeaseExpiry)
 				exp = secs.String()
 			}
 			switch *format {

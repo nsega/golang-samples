@@ -22,7 +22,7 @@ import (
 	"io"
 
 	translate "cloud.google.com/go/translate/apiv3"
-	translatepb "google.golang.org/genproto/googleapis/cloud/translate/v3"
+	"cloud.google.com/go/translate/apiv3/translatepb"
 )
 
 // getGlossary gets the specified glossary.
@@ -34,7 +34,7 @@ func getGlossary(w io.Writer, projectID string, location string, glossaryID stri
 	ctx := context.Background()
 	client, err := translate.NewTranslationClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewTranslationClient: %v", err)
+		return fmt.Errorf("NewTranslationClient: %w", err)
 	}
 	defer client.Close()
 
@@ -44,7 +44,7 @@ func getGlossary(w io.Writer, projectID string, location string, glossaryID stri
 
 	resp, err := client.GetGlossary(ctx, req)
 	if err != nil {
-		return fmt.Errorf("GetGlossary: %v", err)
+		return fmt.Errorf("GetGlossary: %w", err)
 	}
 
 	fmt.Fprintf(w, "Glossary name: %v\n", resp.GetName())

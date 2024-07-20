@@ -21,7 +21,7 @@ import (
 	"io"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 	fieldmask "google.golang.org/genproto/protobuf/field_mask"
 )
 
@@ -33,8 +33,9 @@ func updateKeyRemoveLabels(w io.Writer, name string) error {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create kms client: %v", err)
+		return fmt.Errorf("failed to create kms client: %w", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &kmspb.UpdateCryptoKeyRequest{
@@ -50,7 +51,7 @@ func updateKeyRemoveLabels(w io.Writer, name string) error {
 	// Call the API.
 	result, err := client.UpdateCryptoKey(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to update key: %v", err)
+		return fmt.Errorf("failed to update key: %w", err)
 	}
 	fmt.Fprintf(w, "Updated key: %s\n", result.Name)
 	return nil

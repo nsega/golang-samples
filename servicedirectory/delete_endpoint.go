@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
-	servicedirectory "cloud.google.com/go/servicedirectory/apiv1beta1"
-	sdpb "google.golang.org/genproto/googleapis/cloud/servicedirectory/v1beta1"
+	servicedirectory "cloud.google.com/go/servicedirectory/apiv1"
+	sdpb "cloud.google.com/go/servicedirectory/apiv1/servicedirectorypb"
 )
 
 func deleteEndpoint(projectID string) error {
@@ -34,7 +34,7 @@ func deleteEndpoint(projectID string) error {
 	// Create a registration client.
 	client, err := servicedirectory.NewRegistrationClient(ctx)
 	if err != nil {
-		return fmt.Errorf("ServiceDirectory.NewRegistrationClient: %v", err)
+		return fmt.Errorf("ServiceDirectory.NewRegistrationClient: %w", err)
 	}
 
 	defer client.Close()
@@ -43,7 +43,7 @@ func deleteEndpoint(projectID string) error {
 		Name: fmt.Sprintf("projects/%s/locations/%s/namespaces/%s/services/%s/endpoints/%s", projectID, location, namespaceID, serviceID, endpointID),
 	}
 	if err := client.DeleteEndpoint(ctx, req); err != nil {
-		return fmt.Errorf("DeleteEndpoint: %v", err)
+		return fmt.Errorf("DeleteEndpoint: %w", err)
 	}
 	return nil
 }

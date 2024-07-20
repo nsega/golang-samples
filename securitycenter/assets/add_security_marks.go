@@ -14,27 +14,30 @@
 
 package assets
 
-// [START add_security_marks]
+// [START securitycenter_add_security_marks]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
-// addSecurityMarks adds/updates a the security marks for the assetName.
-// Specifically, it sets "key_a" an "key_b" to "value_a" and "value_b"
+// addSecurityMarks adds/updates the security marks for the assetName.
+// Specifically, it sets "key_a" and "key_b" to "value_a" and "value_b"
 // respectively.  assetName is the resource path for an asset.
 func addSecurityMarks(w io.Writer, assetName string) error {
-	// assetName := "organizations/123123342/assets/12312321"
+	// Specify the value of 'assetName' in one of the following formats:
+	// 		assetName := "organizations/{org_id}/assets/{asset_id}"
+	//		assetName := "projects/{project_id}/assets/{asset_id}"
+	//		assetName := "folders/{folder_id}/assets/{asset_id}"
 	// Instantiate a context and a security service client to make API calls.
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 
@@ -52,7 +55,7 @@ func addSecurityMarks(w io.Writer, assetName string) error {
 	}
 	updatedMarks, err := client.UpdateSecurityMarks(ctx, req)
 	if err != nil {
-		return fmt.Errorf("UpdateSecurityMarks: %v", err)
+		return fmt.Errorf("UpdateSecurityMarks: %w", err)
 	}
 
 	fmt.Fprintf(w, "Updated marks: %s\n", updatedMarks.Name)
@@ -63,4 +66,4 @@ func addSecurityMarks(w io.Writer, assetName string) error {
 
 }
 
-// [END add_security_marks]
+// [END securitycenter_add_security_marks]

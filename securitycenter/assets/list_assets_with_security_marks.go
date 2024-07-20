@@ -14,15 +14,15 @@
 
 package assets
 
-// [START list_assets_with_security_marks]
+// [START securitycenter_list_assets_with_security_marks]
 import (
 	"context"
 	"fmt"
 	"io"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"google.golang.org/api/iterator"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
 )
 
 // listAssetsWithMarks prints assets that have a mark of key_a equal to value_a
@@ -33,11 +33,15 @@ func listAssetsWithMarks(w io.Writer, orgID string) error {
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 
 	req := &securitycenterpb.ListAssetsRequest{
+		// Parent must be in one of the following formats:
+		//		"organizations/{orgId}"
+		//		"projects/{projectId}"
+		//		"folders/{folderId}"
 		Parent: fmt.Sprintf("organizations/%s", orgID),
 		Filter: `security_marks.marks.key_a = "value_a"`,
 	}
@@ -49,7 +53,7 @@ func listAssetsWithMarks(w io.Writer, orgID string) error {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("ListAssets: %v", err)
+			return fmt.Errorf("ListAssets: %w", err)
 		}
 		asset := result.Asset
 		properties := asset.SecurityCenterProperties
@@ -60,4 +64,4 @@ func listAssetsWithMarks(w io.Writer, orgID string) error {
 	return nil
 }
 
-// [END list_assets_with_security_marks]
+// [END securitycenter_list_assets_with_security_marks]

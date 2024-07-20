@@ -21,7 +21,7 @@ import (
 	"io"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 )
 
 // getKeyVersionAttestation gets the attestation on a key version, if one
@@ -33,7 +33,7 @@ func getKeyVersionAttestation(w io.Writer, name string) error {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create kms client: %v", err)
+		return fmt.Errorf("failed to create kms client: %w", err)
 	}
 
 	// Build the request.
@@ -44,7 +44,7 @@ func getKeyVersionAttestation(w io.Writer, name string) error {
 	// Call the API.
 	result, err := client.GetCryptoKeyVersion(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to get key: %v", err)
+		return fmt.Errorf("failed to get key: %w", err)
 	}
 
 	// Only HSM keys have an attestation. For other key types, the attestion will

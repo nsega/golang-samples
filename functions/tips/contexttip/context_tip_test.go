@@ -24,22 +24,23 @@ import (
 	"testing"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/GoogleCloudPlatform/golang-samples/internal/testutil"
 )
 
-const topicName = "functions-test-topic"
-
 func TestPublishMessage(t *testing.T) {
-	// TODO: Use testutil to get the project.
-	projectID = os.Getenv("GOLANG_SAMPLES_PROJECT_ID")
-	if projectID == "" {
-		t.Skip("Missing GOLANG_SAMPLES_PROJECT_ID.")
-	}
+	tc := testutil.SystemTest(t)
+	os.Setenv("GOOGLE_CLOUD_PROJECT", tc.ProjectID)
 
 	ctx := context.Background()
 	var err error
-	client, err = pubsub.NewClient(ctx, projectID)
+	client, err = pubsub.NewClient(ctx, tc.ProjectID)
 	if err != nil {
 		t.Fatalf("pubsub.NewClient: %v", err)
+	}
+
+	topicName := os.Getenv("FUNCTIONS_TOPIC_NAME")
+	if topicName == "" {
+		topicName = "functions-test-topic"
 	}
 
 	topic := client.Topic(topicName)
@@ -54,16 +55,17 @@ func TestPublishMessage(t *testing.T) {
 		}
 	}
 
+	payload := strings.NewReader(fmt.Sprintf(`{"topic":%q, "message": %q}`, topicName, "my_message"))
 	rr := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/", strings.NewReader(fmt.Sprintf(`{"topic":%q}`, topicName)))
+	req := httptest.NewRequest("GET", "/", payload)
 	PublishMessage(rr, req)
 
 	if rr.Code != http.StatusOK {
-		t.Errorf("PublishMessage got response code %v, want %v", rr.Code, http.StatusOK)
+		t.Errorf("PublishMessage: got response code %v, want %v", rr.Code, http.StatusOK)
 	}
 
-	want := "Published"
+	want := "published"
 	if got := rr.Body.String(); !strings.Contains(got, want) {
-		t.Errorf("PublishMessage got %q, want to contain %q", got, want)
+		t.Errorf("PublishMessage: got %q, want to contain %q", got, want)
 	}
 }

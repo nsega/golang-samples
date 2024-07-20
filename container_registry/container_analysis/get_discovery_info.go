@@ -29,11 +29,14 @@ import (
 // getDiscoveryInfo retrieves and prints the Discovery Occurrence created for a specified image.
 // The Discovery Occurrence contains information about the initial scan on the image.
 func getDiscoveryInfo(w io.Writer, resourceURL, projectID string) error {
-	// resourceURL := fmt.Sprintf("https://gcr.io/my-project/my-image")
+	// Use this style of URL when you use Google Container Registry.
+	// resourceURL := "https://gcr.io/my-project/my-repo/my-image"
+	// Use this style of URL when you use Google Artifact Registry.
+	// resourceURL := "https://LOCATION-docker.pkg.dev/my-project/my-repo/my-image"
 	ctx := context.Background()
 	client, err := containeranalysis.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewClient: %v", err)
+		return fmt.Errorf("NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -48,7 +51,7 @@ func getDiscoveryInfo(w io.Writer, resourceURL, projectID string) error {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("occurrence iteration error: %v", err)
+			return fmt.Errorf("occurrence iteration error: %w", err)
 		}
 		fmt.Fprintln(w, occ)
 	}

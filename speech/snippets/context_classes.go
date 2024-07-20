@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	speech "cloud.google.com/go/speech/apiv1"
-	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
+	"cloud.google.com/go/speech/apiv1/speechpb"
 )
 
 // contextClasses provides "hints" to the speech recognizer
@@ -34,7 +34,7 @@ func contextClasses(w io.Writer, gcsURI string) error {
 
 	client, err := speech.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewClient: %v", err)
+		return fmt.Errorf("NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -57,7 +57,7 @@ func contextClasses(w io.Writer, gcsURI string) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("Recognize: %v", err)
+		return fmt.Errorf("Recognize: %w", err)
 	}
 
 	// Print the results.

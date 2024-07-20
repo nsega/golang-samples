@@ -17,7 +17,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -44,7 +43,7 @@ func TestDetect(t *testing.T) {
 		{"SafeSearch", detectSafeSearch, detectSafeSearchURI, "wakeupcat.jpg", "Spoofed"},
 		{"Text", detectText, detectTextURI, "text.jpg", "Preparing to install"},
 		{"FullText", detectDocumentText, detectDocumentTextURI, "text.jpg", "Preparing to install"},
-		{"Crop", detectCropHints, detectCropHintsURI, "wakeupcat.jpg", "(0,0)"},
+		{"Crop", detectCropHints, detectCropHintsURI, "wakeupcat.jpg", "crop hints:"},
 		{"Web", detectWeb, detectWebURI, "wakeupcat.jpg", "Web properties"},
 		{"WebGeo", nil, detectWebGeoURI, "city.jpg", "Entities"},
 		{"Objects", localizeObjects, localizeObjectsURI, "puppies.jpg", "Dog"},
@@ -54,6 +53,7 @@ func TestDetect(t *testing.T) {
 		if tt.local == nil {
 			continue
 		}
+		tt := tt
 		t.Run(tt.name+"/local", func(t *testing.T) {
 			t.Parallel()
 			var buf bytes.Buffer
@@ -70,6 +70,7 @@ func TestDetect(t *testing.T) {
 		if tt.gcs == nil {
 			continue
 		}
+		tt := tt
 		t.Run(tt.name+"/gcs", func(t *testing.T) {
 			t.Parallel()
 			var buf bytes.Buffer
@@ -92,10 +93,10 @@ func TestDetectAsyncDocument(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { client.Close() })
 
-	bucketName := fmt.Sprintf("%s-vision", tc.ProjectID)
+	bucketName := testutil.CreateTestBucket(ctx, t, client, tc.ProjectID, "vision")
 	bucket := client.Bucket(bucketName)
-	testutil.CleanBucket(ctx, t, tc.ProjectID, bucketName)
 
 	var buf bytes.Buffer
 	gcsSourceURI := "gs://python-docs-samples-tests/HodgeConj.pdf"

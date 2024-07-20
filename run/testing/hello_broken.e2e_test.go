@@ -15,7 +15,6 @@
 package cloudruntests
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -35,18 +34,15 @@ func TestBrokenService(t *testing.T) {
 	defer service.Clean()
 
 	requestPath := "/improved"
-	req, err := service.NewRequest("GET", requestPath)
+	resp, err := service.Request("GET", requestPath,
+		cloudrunci.WithAttempts(10),
+		cloudrunci.WithDelay(20*time.Second),
+	)
 	if err != nil {
-		t.Fatalf("service.NewRequest: %v", err)
-	}
-
-	client := http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		t.Fatalf("client.Do: %v", err)
+		t.Errorf("service.Request: %v", err)
+		return
 	}
 	defer resp.Body.Close()
-	fmt.Printf("client.Do: %s %s\n", req.Method, req.URL)
 
 	if got := resp.StatusCode; got != http.StatusOK {
 		t.Errorf("response status: got %d, want %d", got, http.StatusOK)

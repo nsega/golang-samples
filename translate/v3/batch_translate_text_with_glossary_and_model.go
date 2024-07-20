@@ -22,7 +22,7 @@ import (
 	"io"
 
 	translate "cloud.google.com/go/translate/apiv3"
-	translatepb "google.golang.org/genproto/googleapis/cloud/translate/v3"
+	"cloud.google.com/go/translate/apiv3/translatepb"
 )
 
 // batchTranslateTextWithGlossaryAndModel translates a large volume of text in asynchronous batch mode.
@@ -39,7 +39,7 @@ func batchTranslateTextWithGlossaryAndModel(w io.Writer, projectID string, locat
 	ctx := context.Background()
 	client, err := translate.NewTranslationClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewTranslationClient: %v", err)
+		return fmt.Errorf("NewTranslationClient: %w", err)
 	}
 	defer client.Close()
 
@@ -76,13 +76,13 @@ func batchTranslateTextWithGlossaryAndModel(w io.Writer, projectID string, locat
 	// The BatchTranslateText operation is async.
 	op, err := client.BatchTranslateText(ctx, req)
 	if err != nil {
-		return fmt.Errorf("BatchTranslateText: %v", err)
+		return fmt.Errorf("BatchTranslateText: %w", err)
 	}
 	fmt.Fprintf(w, "Processing operation name: %q\n", op.Name())
 
 	resp, err := op.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("Wait: %v", err)
+		return fmt.Errorf("Wait: %w", err)
 	}
 
 	fmt.Fprintf(w, "Total characters: %v\n", resp.GetTotalCharacters())

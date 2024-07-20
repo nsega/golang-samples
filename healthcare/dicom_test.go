@@ -59,12 +59,17 @@ func TestDICOMStore(t *testing.T) {
 	}
 
 	if err := createDataset(ioutil.Discard, tc.ProjectID, location, datasetID); err != nil {
-		t.Skipf("Unable to create test dataset: %v", err)
-		return
+		t.Fatalf("Unable to create test dataset: %v", err)
 	}
 
-	if err := createDICOMStore(buf, tc.ProjectID, location, datasetID, dicomStoreID); err != nil {
-		t.Errorf("createDICOMStore got err: %v", err)
+	testutil.Retry(t, 10, 10*time.Second, func(r *testutil.R) {
+		if err := createDICOMStore(buf, tc.ProjectID, location, datasetID, dicomStoreID); err != nil {
+			r.Errorf("createDICOMStore got err: %v", err)
+		}
+	})
+
+	if t.Failed() {
+		return
 	}
 
 	dicomStoreName := fmt.Sprintf("projects/%s/locations/%s/datasets/%s/dicomStores/%s", tc.ProjectID, location, datasetID, dicomStoreID)

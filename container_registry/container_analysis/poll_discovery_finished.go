@@ -28,14 +28,17 @@ import (
 
 // pollDiscoveryOccurrenceFinished returns the discovery occurrence for a resource once it reaches a finished state.
 func pollDiscoveryOccurrenceFinished(resourceURL, projectID string, timeout time.Duration) (*grafeaspb.Occurrence, error) {
-	// resourceURL := fmt.Sprintf("https://gcr.io/my-project/my-image")
-	// timeout := time.Duration(5) * time.Second
+	// Use this style of URL when you use Google Container Registry.
+	// resourceURL := "https://gcr.io/my-project/my-repo/my-image"
+	// Use this style of URL when you use Google Artifact Registry.
+	// resourceURL := "https://LOCATION-docker.pkg.dev/my-project/my-repo/my-image"
+	// timeout := 5 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	client, err := containeranalysis.NewClient(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("NewClient: %v", err)
+		return nil, fmt.Errorf("NewClient: %w", err)
 	}
 	defer client.Close()
 
@@ -72,7 +75,7 @@ func pollDiscoveryOccurrenceFinished(resourceURL, projectID string, timeout time
 				break
 			}
 			if err != nil {
-				return nil, fmt.Errorf("it.Next: %v", err)
+				return nil, fmt.Errorf("it.Next: %w", err)
 			}
 			if result.GetDiscovery() != nil {
 				discoveryOccurrence = result
@@ -90,7 +93,7 @@ func pollDiscoveryOccurrenceFinished(resourceURL, projectID string, timeout time
 			req := &grafeaspb.GetOccurrenceRequest{Name: discoveryOccurrence.GetName()}
 			updated, err := client.GetGrafeasClient().GetOccurrence(ctx, req)
 			if err != nil {
-				return nil, fmt.Errorf("GetOccurrence: %v", err)
+				return nil, fmt.Errorf("GetOccurrence: %w", err)
 			}
 			switch updated.GetDiscovery().GetAnalysisStatus() {
 			case grafeaspb.DiscoveryOccurrence_FINISHED_SUCCESS,

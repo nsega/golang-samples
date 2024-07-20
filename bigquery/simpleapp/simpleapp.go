@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// [START bigquery_simple_app_all]
+
 // Command simpleapp queries the Stack Overflow public dataset in Google BigQuery.
 package main
 
-// [START bigquery_simple_app_all]
 // [START bigquery_simple_app_deps]
 import (
 	"context"
@@ -89,7 +90,7 @@ func printResults(w io.Writer, iter *bigquery.RowIterator) error {
 			return nil
 		}
 		if err != nil {
-			return fmt.Errorf("error iterating through results: %v", err)
+			return fmt.Errorf("error iterating through results: %w", err)
 		}
 
 		fmt.Fprintf(w, "url: %s views: %d\n", row.URL, row.ViewCount)

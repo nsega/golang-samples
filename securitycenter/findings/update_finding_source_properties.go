@@ -14,7 +14,7 @@
 
 package findings
 
-// [START update_finding_source_properties]
+// [START securitycenter_update_finding_source_properties]
 import (
 	"context"
 	"fmt"
@@ -22,9 +22,9 @@ import (
 	"time"
 
 	securitycenter "cloud.google.com/go/securitycenter/apiv1"
+	"cloud.google.com/go/securitycenter/apiv1/securitycenterpb"
 	"github.com/golang/protobuf/ptypes"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	securitycenterpb "google.golang.org/genproto/googleapis/cloud/securitycenter/v1"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
@@ -36,13 +36,13 @@ func updateFindingSourceProperties(w io.Writer, findingName string) error {
 	ctx := context.Background()
 	client, err := securitycenter.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("securitycenter.NewClient: %v", err)
+		return fmt.Errorf("securitycenter.NewClient: %w", err)
 	}
 	defer client.Close() // Closing the client safely cleans up background resources.
 	// Use now as the eventTime for the security finding.
 	eventTime, err := ptypes.TimestampProto(time.Now())
 	if err != nil {
-		return fmt.Errorf("TimestampProto: %v", err)
+		return fmt.Errorf("TimestampProto: %w", err)
 	}
 
 	req := &securitycenterpb.UpdateFindingRequest{
@@ -64,7 +64,7 @@ func updateFindingSourceProperties(w io.Writer, findingName string) error {
 
 	finding, err := client.UpdateFinding(ctx, req)
 	if err != nil {
-		return fmt.Errorf("UpdateFinding: %v", err)
+		return fmt.Errorf("UpdateFinding: %w", err)
 	}
 	fmt.Fprintf(w, "Finding updated: %s\n", finding.Name)
 	fmt.Fprintf(w, "Finding state: %v\n", finding.State)
@@ -76,4 +76,4 @@ func updateFindingSourceProperties(w io.Writer, findingName string) error {
 	return nil
 }
 
-// [END update_finding_source_properties]
+// [END securitycenter_update_finding_source_properties]

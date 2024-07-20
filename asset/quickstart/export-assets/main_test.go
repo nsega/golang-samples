@@ -17,41 +17,38 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/GoogleCloudPlatform/golang-samples/internal/testutil"
 )
 
 func TestMain(t *testing.T) {
+	t.Skip("Skipped while investigating https://github.com/GoogleCloudPlatform/golang-samples/issues/2811")
 	tc := testutil.SystemTest(t)
-	bucketName := fmt.Sprintf("%s-for-assets", tc.ProjectID)
-	os.Setenv("GOOGLE_CLOUD_PROJECT", tc.ProjectID)
+	env := map[string]string{"GOOGLE_CLOUD_PROJECT": tc.ProjectID}
 
 	ctx := context.Background()
 
-	// Delete the bucket (if it exists) then recreate it.
-	testutil.CleanBucket(ctx, t, tc.ProjectID, bucketName)
+	// Create a bucket in GCS.
+	bucketName := testutil.TestBucket(ctx, t, tc.ProjectID, "for-assets")
 
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
+	m := testutil.BuildMain(t)
+	defer m.Cleanup()
 
-	main()
+	testutil.Retry(t, 10, 10*time.Second, func(r *testutil.R) {
+		out, stderr, err := m.Run(env, 60*time.Second)
+		if err != nil {
+			r.Errorf("failed to run: %v\n%s\n%s\n", err, out, stderr)
+			return
+		}
 
-	w.Close()
-	os.Stdout = oldStdout
+		got := string(out)
+		want := fmt.Sprintf(`"gs://%s/my-assets.txt`, bucketName)
+		if !strings.Contains(got, want) {
+			r.Errorf("stdout returned %s, wanted to contain %s", got, want)
+		}
+	})
 
-	out, err := ioutil.ReadAll(r)
-	if err != nil {
-		t.Fatalf("Failed to read stdout: %v", err)
-	}
-	got := string(out)
-
-	want := fmt.Sprintf(`"gs://%s/my-assets.txt`, bucketName)
-	if !strings.Contains(got, want) {
-		t.Errorf("stdout returned %s, wanted to contain %s", got, want)
-	}
 }

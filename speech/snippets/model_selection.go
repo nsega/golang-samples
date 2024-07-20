@@ -25,7 +25,7 @@ import (
 	"context"
 
 	speech "cloud.google.com/go/speech/apiv1"
-	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
+	"cloud.google.com/go/speech/apiv1/speechpb"
 	// [END imports]
 )
 
@@ -36,13 +36,14 @@ func modelSelection(w io.Writer, path string) error {
 
 	client, err := speech.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("NewClient: %v", err)
+		return fmt.Errorf("NewClient: %w", err)
 	}
+	defer client.Close()
 
 	// path = "../testdata/Google_Gnome.wav"
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("ReadFile: %v", err)
+		return fmt.Errorf("ReadFile: %w", err)
 	}
 
 	req := &speechpb.RecognizeRequest{
@@ -59,7 +60,7 @@ func modelSelection(w io.Writer, path string) error {
 
 	resp, err := client.Recognize(ctx, req)
 	if err != nil {
-		return fmt.Errorf("Recognize: %v", err)
+		return fmt.Errorf("Recognize: %w", err)
 	}
 
 	for i, result := range resp.Results {

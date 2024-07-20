@@ -29,8 +29,9 @@ func pullMsgsError(w io.Writer, projectID, subID string) error {
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
-		return fmt.Errorf("pubsub.NewClient: %v", err)
+		return fmt.Errorf("pubsub.NewClient: %w", err)
 	}
+	defer client.Close()
 
 	// If the service returns a non-retryable error, Receive returns that error after
 	// all of the outstanding calls to the handler have returned.
@@ -39,7 +40,7 @@ func pullMsgsError(w io.Writer, projectID, subID string) error {
 		msg.Ack()
 	})
 	if err != nil {
-		return fmt.Errorf("Receive: %v", err)
+		return fmt.Errorf("Receive: %w", err)
 	}
 	return nil
 }

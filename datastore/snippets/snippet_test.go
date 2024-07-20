@@ -44,6 +44,7 @@ type Task struct {
 
 func SnippetNewIncompleteKey() {
 	// [START datastore_incomplete_key]
+	// A complete key is assigned to the entity when it is Put.
 	taskKey := datastore.IncompleteKey("Task", nil)
 	// [END datastore_incomplete_key]
 	_ = taskKey // Use the task key for datastore operations.
@@ -76,6 +77,7 @@ func SnippetNewKey_withMultipleParents() {
 func SnippetClient_Put() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_entity_with_parent]
 	parentKey := datastore.NameKey("TaskList", "default", nil)
 	key := datastore.IncompleteKey("Task", parentKey)
@@ -155,6 +157,7 @@ func Snippet_basicEntity() {
 func SnippetClient_Put_upsert() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	task := &Task{} // Populated with appropriate data.
 	// [START datastore_upsert]
 	key := datastore.IncompleteKey("Task", nil)
@@ -167,6 +170,7 @@ func SnippetClient_Put_upsert() {
 func SnippetTransaction_insert() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	task := Task{} // Populated with appropriate data.
 	// [START datastore_insert]
 	taskKey := datastore.NameKey("Task", "sampleTask", nil)
@@ -187,6 +191,7 @@ func SnippetTransaction_insert() {
 func SnippetClient_Get() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_lookup]
 	var task Task
 	taskKey := datastore.NameKey("Task", "sampleTask", nil)
@@ -198,6 +203,7 @@ func SnippetClient_Get() {
 func SnippetTransaction_update() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_update]
 	taskKey := datastore.NameKey("Task", "sampleTask", nil)
 	tx, err := client.NewTransaction(ctx)
@@ -221,6 +227,7 @@ func SnippetTransaction_update() {
 func SnippetClient_Delete() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_delete]
 	key := datastore.NameKey("Task", "sampletask", nil)
 	err := client.Delete(ctx, key)
@@ -231,6 +238,7 @@ func SnippetClient_Delete() {
 func SnippetClient_PutMulti() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_batch_upsert]
 	tasks := []*Task{
 		{
@@ -260,6 +268,7 @@ func SnippetClient_PutMulti() {
 func SnippetClient_GetMulti() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_batch_lookup]
 	var taskKeys []*datastore.Key // Populated with incomplete keys.
 	tasks := make([]*Task, len(taskKeys))
@@ -271,6 +280,7 @@ func SnippetClient_GetMulti() {
 func SnippetClient_DeleteMulti() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	var taskKeys []*datastore.Key // Populated with incomplete keys.
 	// [START datastore_batch_delete]
 	err := client.DeleteMulti(ctx, taskKeys)
@@ -281,10 +291,11 @@ func SnippetClient_DeleteMulti() {
 func SnippetQuery_basic() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_basic_query]
 	query := datastore.NewQuery("Task").
-		Filter("Done =", false).
-		Filter("Priority >=", 4).
+		FilterField("Done", "=", false).
+		FilterField("Priority", ">=", 4).
 		Order("-Priority")
 	// [END datastore_basic_query]
 	// [START datastore_run_query]
@@ -305,14 +316,16 @@ func SnippetQuery_basic() {
 
 func SnippetQuery_propertyFilter() {
 	// [START datastore_property_filter]
-	query := datastore.NewQuery("Task").Filter("Done =", false)
+	query := datastore.NewQuery("Task").FilterField("Done", "=", false)
 	// [END datastore_property_filter]
 	_ = query // Use client.Run or client.GetAll to execute the query.
 }
 
 func SnippetQuery_compositeFilter() {
 	// [START datastore_composite_filter]
-	query := datastore.NewQuery("Task").Filter("Done =", false).Filter("Priority =", 4)
+	query := datastore.NewQuery("Task").
+		FilterField("Done", "=", false).
+		FilterField("Priority", "=", 4)
 	// [END datastore_composite_filter]
 	_ = query // Use client.Run or client.GetAll to execute the query.
 }
@@ -320,7 +333,7 @@ func SnippetQuery_compositeFilter() {
 func SnippetQuery_keyFilter() {
 	// [START datastore_key_filter]
 	key := datastore.NameKey("Task", "someTask", nil)
-	query := datastore.NewQuery("Task").Filter("__key__ >", key)
+	query := datastore.NewQuery("Task").FilterField("__key__", ">", key)
 	// [END datastore_key_filter]
 	_ = query // Use client.Run or client.GetAll to execute the query.
 }
@@ -349,7 +362,7 @@ func SnippetQuery_sortMulti() {
 func SnippetQuery_kindless() {
 	var lastSeenKey *datastore.Key
 	// [START datastore_kindless_query]
-	query := datastore.NewQuery("").Filter("__key__ >", lastSeenKey)
+	query := datastore.NewQuery("").FilterField("__key__", ">", lastSeenKey)
 	// [END datastore_kindless_query]
 	_ = query // Use client.Run or client.GetAll to execute the query.
 }
@@ -365,6 +378,7 @@ func SnippetQuery_Ancestor() {
 func SnippetQuery_Project() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_projection_query]
 	query := datastore.NewQuery("Task").Project("Priority", "PercentComplete")
 	// [END datastore_projection_query]
@@ -388,6 +402,7 @@ func SnippetQuery_Project() {
 func SnippetQuery_KeysOnly() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_keys_only_query]
 	query := datastore.NewQuery("Task").KeysOnly()
 	// [END datastore_keys_only_query]
@@ -410,8 +425,8 @@ func SnippetQuery_DistinctOn() {
 func SnippetQuery_Filter_arrayInequality() {
 	// [START datastore_array_value_inequality_range]
 	query := datastore.NewQuery("Task").
-		Filter("Tag >", "learn").
-		Filter("Tag <", "math")
+		FilterField("Tag", ">", "learn").
+		FilterField("Tag", "<", "math")
 	// [END datastore_array_value_inequality_range]
 	_ = query // Use client.Run or client.GetAll to execute the query.
 }
@@ -419,8 +434,8 @@ func SnippetQuery_Filter_arrayInequality() {
 func SnippetQuery_Filter_arrayEquality() {
 	// [START datastore_array_value_equality]
 	query := datastore.NewQuery("Task").
-		Filter("Tag =", "fun").
-		Filter("Tag =", "programming")
+		FilterField("Tag", "=", "fun").
+		FilterField("Tag", "=", "programming")
 	// [END datastore_array_value_equality]
 	_ = query // Use client.Run or client.GetAll to execute the query.
 }
@@ -428,8 +443,8 @@ func SnippetQuery_Filter_arrayEquality() {
 func SnippetQuery_Filter_inequality() {
 	// [START datastore_inequality_range]
 	query := datastore.NewQuery("Task").
-		Filter("Created >", time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)).
-		Filter("Created <", time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
+		FilterField("Created", ">", time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)).
+		FilterField("Created", "<", time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
 	// [END datastore_inequality_range]
 	_ = query // Use client.Run or client.GetAll to execute the query.
 }
@@ -437,8 +452,8 @@ func SnippetQuery_Filter_inequality() {
 func SnippetQuery_Filter_invalidInequality() {
 	// [START datastore_inequality_invalid]
 	query := datastore.NewQuery("Task").
-		Filter("Created >", time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)).
-		Filter("Priority >", 3)
+		FilterField("Created", ">", time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)).
+		FilterField("Priority", ">", 3)
 	// [END datastore_inequality_invalid]
 	_ = query // The query is invalid.
 }
@@ -446,10 +461,10 @@ func SnippetQuery_Filter_invalidInequality() {
 func SnippetQuery_Filter_mixed() {
 	// [START datastore_equal_and_inequality_range]
 	query := datastore.NewQuery("Task").
-		Filter("Priority =", 4).
-		Filter("Done =", false).
-		Filter("Created >", time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)).
-		Filter("Created <", time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
+		FilterField("Priority", "=", 4).
+		FilterField("Done", "=", false).
+		FilterField("Created", ">", time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC)).
+		FilterField("Created", "<", time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
 	// [END datastore_equal_and_inequality_range]
 	_ = query // Use client.Run or client.GetAll to execute the query.
 }
@@ -457,7 +472,7 @@ func SnippetQuery_Filter_mixed() {
 func SnippetQuery_inequalitySort() {
 	// [START datastore_inequality_sort]
 	query := datastore.NewQuery("Task").
-		Filter("Priority >", 3).
+		FilterField("Priority", ">", 3).
 		Order("Priority").
 		Order("Created")
 	// [END datastore_inequality_sort]
@@ -467,7 +482,7 @@ func SnippetQuery_inequalitySort() {
 func SnippetQuery_invalidInequalitySortA() {
 	// [START datastore_inequality_sort_invalid_not_same]
 	query := datastore.NewQuery("Task").
-		Filter("Priority >", 3).
+		FilterField("Priority", ">", 3).
 		Order("Created")
 	// [END datastore_inequality_sort_invalid_not_same]
 	_ = query // The query is invalid.
@@ -476,7 +491,7 @@ func SnippetQuery_invalidInequalitySortA() {
 func SnippetQuery_invalidInequalitySortB() {
 	// [START datastore_inequality_sort_invalid_not_first]
 	query := datastore.NewQuery("Task").
-		Filter("Priority >", 3).
+		FilterField("Priority", ">", 3).
 		Order("Created").
 		Order("Priority")
 	// [END datastore_inequality_sort_invalid_not_first]
@@ -493,8 +508,11 @@ func SnippetQuery_Limit() {
 func SnippetIterator_Cursor() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
-	cursorStr := ""
+	defer client.Close()
 	// [START datastore_cursor_paging]
+	// cursorStr is a cursor to start querying at.
+	cursorStr := ""
+
 	const pageSize = 5
 	query := datastore.NewQuery("Tasks").Limit(pageSize)
 	if cursorStr != "" {
@@ -519,6 +537,7 @@ func SnippetIterator_Cursor() {
 	}
 
 	// Get the cursor for the next page of results.
+	// nextCursor.String can be used as the next page's token.
 	nextCursor, err := it.Cursor()
 	// [END datastore_cursor_paging]
 	_ = err        // Check the error.
@@ -535,7 +554,8 @@ func SnippetQuery_EventualConsistency() {
 
 func SnippetQuery_unindexed() {
 	// [START datastore_unindexed_property_query]
-	query := datastore.NewQuery("Tasks").Filter("Description =", "A task description")
+	query := datastore.NewQuery("Tasks").
+		FilterField("Description", "=", "A task description")
 	// [END datastore_unindexed_property_query]
 	_ = query // Use client.Run or client.GetAll to execute the query.
 }
@@ -554,6 +574,7 @@ func Snippet_explodingProperties() {
 func Snippet_Transaction() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	var to, from *datastore.Key
 	// [START datastore_transactional_update]
 	type BankAccount struct {
@@ -586,6 +607,7 @@ func Snippet_Transaction() {
 func Snippet_Client_RunInTransaction() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	var to, from *datastore.Key
 	// [START datastore_transactional_retry]
 	type BankAccount struct {
@@ -611,6 +633,7 @@ func Snippet_Client_RunInTransaction() {
 func SnippetTransaction_getOrCreate() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	key := datastore.NameKey("Task", "sampletask", nil)
 	// [START datastore_transactional_get_or_create]
 	_, err := client.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
@@ -633,6 +656,7 @@ func SnippetTransaction_getOrCreate() {
 func SnippetTransaction_runQuery() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_transactional_single_entity_group_read_only]
 	tx, err := client.NewTransaction(ctx, datastore.ReadOnly)
 	if err != nil {
@@ -656,18 +680,19 @@ func metadataNamespaces(w io.Writer, projectID string) error {
 	ctx := context.Background()
 	client, err := datastore.NewClient(ctx, projectID)
 	if err != nil {
-		return fmt.Errorf("datastore.NewClient: %v", err)
+		return fmt.Errorf("datastore.NewClient: %w", err)
 	}
+	defer client.Close()
 
 	start := datastore.NameKey("__namespace__", "g", nil)
 	end := datastore.NameKey("__namespace__", "h", nil)
 	query := datastore.NewQuery("__namespace__").
-		Filter("__key__ >=", start).
-		Filter("__key__ <", end).
+		FilterField("__key__", ">=", start).
+		FilterField("__key__", "<", end).
 		KeysOnly()
 	keys, err := client.GetAll(ctx, query, nil)
 	if err != nil {
-		return fmt.Errorf("client.GetAll: %v", err)
+		return fmt.Errorf("client.GetAll: %w", err)
 	}
 
 	fmt.Fprintln(w, "Namespaces:")
@@ -693,6 +718,7 @@ func TestMetadaNamespaces(t *testing.T) {
 func Snippet_metadataKinds() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_kind_run_query]
 	query := datastore.NewQuery("__kind__").KeysOnly()
 	keys, err := client.GetAll(ctx, query, nil)
@@ -710,6 +736,7 @@ func Snippet_metadataKinds() {
 func Snippet_metadataProperties() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_property_run_query]
 	query := datastore.NewQuery("__property__").KeysOnly()
 	keys, err := client.GetAll(ctx, query, nil)
@@ -729,6 +756,7 @@ func Snippet_metadataProperties() {
 func Snippet_metadataPropertiesForKind() {
 	ctx := context.Background()
 	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
 	// [START datastore_property_by_kind_run_query]
 	kindKey := datastore.NameKey("__kind__", "Task", nil)
 	query := datastore.NewQuery("__property__").Ancestor(kindKey)
@@ -742,4 +770,140 @@ func Snippet_metadataPropertiesForKind() {
 	// [END datastore_property_by_kind_run_query]
 	_ = err  // Check error.
 	_ = keys // Use keys to find property names, and props for their representations.
+}
+
+func SnippetQuery_RunQueryWithExplain(w io.Writer) {
+	ctx := context.Background()
+	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
+
+	// [START datastore_query_explain_entity]
+	// Build the query
+	query := datastore.NewQuery("Task")
+
+	// Set the explain options to get back *only* the plan summary
+	it := client.RunWithOptions(ctx, query, datastore.ExplainOptions{})
+	_, err := it.Next(nil)
+
+	// Get the explain metrics
+	explainMetrics := it.ExplainMetrics
+
+	planSummary := explainMetrics.PlanSummary
+	fmt.Fprintln(w, "----- Indexes Used -----")
+	for k, v := range planSummary.IndexesUsed {
+		fmt.Fprintf(w, "%+v: %+v\n", k, v)
+	}
+	// [END datastore_query_explain_entity]
+	_ = err // Check non-nil errors other than Iterator.Done
+}
+
+func SnippetQuery_RunQueryWithExplainAnalyze(w io.Writer) {
+	ctx := context.Background()
+	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
+
+	// [START datastore_query_explain_analyze_entity]
+	// Build the query
+	query := datastore.NewQuery("Task")
+
+	// Set explain options with analzye = true to get back the query stats, plan info, and query
+	// results
+	it := client.RunWithOptions(ctx, query, datastore.ExplainOptions{Analyze: true})
+
+	// Get the query results
+	fmt.Fprintln(w, "----- Query Results -----")
+	for {
+		var task Task
+		_, err := it.Next(&task)
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			fmt.Fprintf(w, "Error fetching next task: %v", err)
+			return
+		}
+		fmt.Fprintf(w, "Task %q, Priority %d\n", task.Description, task.Priority)
+	}
+
+	// Get plan summary
+	planSummary := it.ExplainMetrics.PlanSummary
+	fmt.Fprintln(w, "----- Indexes Used -----")
+	for k, v := range planSummary.IndexesUsed {
+		fmt.Fprintf(w, "%+v: %+v\n", k, v)
+	}
+
+	// Get the execution stats
+	executionStats := it.ExplainMetrics.ExecutionStats
+	fmt.Fprintln(w, "----- Execution Stats -----")
+	fmt.Fprintf(w, "%+v\n", executionStats)
+	fmt.Fprintln(w, "----- Debug Stats -----")
+	for k, v := range *executionStats.DebugStats {
+		fmt.Fprintf(w, "%+v: %+v\n", k, v)
+	}
+	// [END datastore_query_explain_analyze_entity]
+}
+
+func SnippetQuery_RunAggregationQueryWithExplain(w io.Writer) {
+	ctx := context.Background()
+	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
+
+	// [START datastore_query_explain_aggregation]
+	// Build the query
+	query := datastore.NewQuery("Task")
+
+	// Set the explain options to get back *only* the plan summary
+	ar, err := client.RunAggregationQueryWithOptions(ctx, query.NewAggregationQuery().WithCount("count"), datastore.ExplainOptions{})
+
+	// Get the explain metrics
+	explainMetrics := ar.ExplainMetrics
+
+	planSummary := explainMetrics.PlanSummary
+	fmt.Fprintln(w, "----- Indexes Used -----")
+	for k, v := range planSummary.IndexesUsed {
+		fmt.Fprintf(w, "%+v: %+v\n", k, v)
+	}
+	// [END datastore_query_explain_aggregation]
+
+	_ = err // Check non-nil errors
+}
+
+func SnippetQuery_RunAggregationQueryWithExplainAnalyze(w io.Writer) {
+	ctx := context.Background()
+	client, _ := datastore.NewClient(ctx, "my-proj")
+	defer client.Close()
+
+	// [START datastore_query_explain_analyze_aggregation]
+	// Build the query
+	query := datastore.NewQuery("Task")
+
+	// Set explain options with analzye = true to get back the query stats, plan info, and query
+	// results
+	countAlias := "count"
+	ar, err := client.RunAggregationQueryWithOptions(ctx,
+		query.NewAggregationQuery().WithCount(countAlias), datastore.ExplainOptions{Analyze: true})
+
+	// Get the query results
+	fmt.Fprintln(w, "----- Query Results -----")
+	result := ar.Result[countAlias]
+	fmt.Fprintf(w, "Count %v\n", result)
+
+	// Get plan summary
+	planSummary := ar.ExplainMetrics.PlanSummary
+	fmt.Fprintln(w, "----- Indexes Used -----")
+	for k, v := range planSummary.IndexesUsed {
+		fmt.Fprintf(w, "%+v: %+v\n", k, v)
+	}
+
+	// Get the execution stats
+	executionStats := ar.ExplainMetrics.ExecutionStats
+	fmt.Fprintln(w, "----- Execution Stats -----")
+	fmt.Fprintf(w, "%+v\n", executionStats)
+	fmt.Fprintln(w, "----- Debug Stats -----")
+	for k, v := range *executionStats.DebugStats {
+		fmt.Fprintf(w, "%+v: %+v\n", k, v)
+	}
+	// [END datastore_query_explain_analyze_aggregation]
+
+	_ = err // Check non-nil errors
 }

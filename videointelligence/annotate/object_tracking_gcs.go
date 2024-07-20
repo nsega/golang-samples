@@ -15,7 +15,7 @@
 // Package annotate contains speech examples.
 package annotate
 
-// [START videointelligence_object_tracking_gcs]
+// [START video_object_tracking_gcs]
 
 import (
 	"context"
@@ -23,8 +23,8 @@ import (
 	"io"
 
 	video "cloud.google.com/go/videointelligence/apiv1"
+	videopb "cloud.google.com/go/videointelligence/apiv1/videointelligencepb"
 	"github.com/golang/protobuf/ptypes"
-	videopb "google.golang.org/genproto/googleapis/cloud/videointelligence/v1"
 )
 
 // objectTrackingGCS analyzes a video and extracts entities with their bounding boxes.
@@ -36,8 +36,9 @@ func objectTrackingGCS(w io.Writer, gcsURI string) error {
 	// Creates a client.
 	client, err := video.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("video.NewClient: %v", err)
+		return fmt.Errorf("video.NewClient: %w", err)
 	}
+	defer client.Close()
 
 	op, err := client.AnnotateVideo(ctx, &videopb.AnnotateVideoRequest{
 		InputUri: gcsURI,
@@ -46,12 +47,12 @@ func objectTrackingGCS(w io.Writer, gcsURI string) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("AnnotateVideo: %v", err)
+		return fmt.Errorf("AnnotateVideo: %w", err)
 	}
 
 	resp, err := op.Wait(ctx)
 	if err != nil {
-		return fmt.Errorf("Wait: %v", err)
+		return fmt.Errorf("Wait: %w", err)
 	}
 
 	// Only one video was processed, so get the first result.
@@ -87,4 +88,4 @@ func objectTrackingGCS(w io.Writer, gcsURI string) error {
 	return nil
 }
 
-// [END videointelligence_object_tracking_gcs]
+// [END video_object_tracking_gcs]

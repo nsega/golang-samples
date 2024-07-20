@@ -21,7 +21,7 @@ import (
 	"io"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 )
 
 // getSecret gets information about the given secret. This only returns metadata
@@ -33,8 +33,9 @@ func getSecret(w io.Writer, name string) error {
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create secretmanager client: %v", err)
+		return fmt.Errorf("failed to create secretmanager client: %w", err)
 	}
+	defer client.Close()
 
 	// Build the request.
 	req := &secretmanagerpb.GetSecretRequest{
@@ -44,7 +45,7 @@ func getSecret(w io.Writer, name string) error {
 	// Call the API.
 	result, err := client.GetSecret(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to get secret: %v", err)
+		return fmt.Errorf("failed to get secret: %w", err)
 	}
 
 	replication := result.Replication.Replication

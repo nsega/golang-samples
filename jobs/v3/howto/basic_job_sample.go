@@ -24,6 +24,7 @@ import (
 	talent "google.golang.org/api/jobs/v3"
 )
 
+// [START job_create_job]
 // [START create_job]
 
 // createJob create a job as given.
@@ -32,12 +33,12 @@ func createJob(w io.Writer, projectID string, jobToCreate *talent.Job) (*talent.
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	parent := "projects/" + projectID
@@ -46,14 +47,15 @@ func createJob(w io.Writer, projectID string, jobToCreate *talent.Job) (*talent.
 	}
 	job, err := service.Projects.Jobs.Create(parent, req).Do()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create job %q, Err: %v", jobToCreate.RequisitionId, err)
+		return nil, fmt.Errorf("Failed to create job %q, Err: %w", jobToCreate.RequisitionId, err)
 	}
 	return job, err
 }
 
 // [END create_job]
+// [END job_create_job]
 
-// [START get_job]
+// [START job_get_job]
 
 // getJob gets a job by name.
 func getJob(w io.Writer, jobName string) (*talent.Job, error) {
@@ -61,17 +63,17 @@ func getJob(w io.Writer, jobName string) (*talent.Job, error) {
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	job, err := service.Projects.Jobs.Get(jobName).Do()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get job %s: %v", jobName, err)
+		return nil, fmt.Errorf("Failed to get job %s: %w", jobName, err)
 	}
 
 	fmt.Fprintf(w, "Job: %q", job.Name)
@@ -79,9 +81,9 @@ func getJob(w io.Writer, jobName string) (*talent.Job, error) {
 	return job, err
 }
 
-// [END get_job]
+// [END job_get_job]
 
-// [START update_job]
+// [START job_update_job]
 
 // updateJob update a job with all fields except name.
 func updateJob(w io.Writer, jobName string, jobToUpdate *talent.Job) (*talent.Job, error) {
@@ -89,12 +91,12 @@ func updateJob(w io.Writer, jobName string, jobToUpdate *talent.Job) (*talent.Jo
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	req := &talent.UpdateJobRequest{
@@ -102,15 +104,15 @@ func updateJob(w io.Writer, jobName string, jobToUpdate *talent.Job) (*talent.Jo
 	}
 	job, err := service.Projects.Jobs.Patch(jobName, req).Do()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to update job %s: %v", jobName, err)
+		return nil, fmt.Errorf("Failed to update job %s: %w", jobName, err)
 	}
 
 	return job, err
 }
 
-// [END update_job]
+// [END job_update_job]
 
-// [START update_job_with_field_mask]
+// [START job_update_job_with_field_mask]
 
 // updateJobWithMask updates a job by name with specific fields.
 // mask is a comma separated list top-level fields of talent.Job.
@@ -119,12 +121,12 @@ func updateJobWithMask(w io.Writer, jobName string, mask string, jobToUpdate *ta
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	req := &talent.UpdateJobRequest{
@@ -139,9 +141,9 @@ func updateJobWithMask(w io.Writer, jobName string, mask string, jobToUpdate *ta
 	return job, err
 }
 
-// [END update_job_with_field_mask]
+// [END job_update_job_with_field_mask]
 
-// [START delete_job]
+// [START job_delete_job]
 
 // deleteJob deletes an existing job by name.
 func deleteJob(w io.Writer, jobName string) error {
@@ -149,24 +151,24 @@ func deleteJob(w io.Writer, jobName string) error {
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return fmt.Errorf("google.DefaultClient: %v", err)
+		return fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return fmt.Errorf("talent.New: %v", err)
+		return fmt.Errorf("talent.New: %w", err)
 	}
 
 	if _, err := service.Projects.Jobs.Delete(jobName).Do(); err != nil {
-		return fmt.Errorf("Delete(%s): %v", jobName, err)
+		return fmt.Errorf("Delete(%s): %w", jobName, err)
 	}
 
 	return err
 }
 
-// [END delete_job]
+// [END job_delete_job]
 
-// [START list_jobs]
+// [START job_list_jobs]
 
 // listJobs lists jobs with a filter, for example
 // `companyName="projects/my-project/companies/123"`.
@@ -175,18 +177,18 @@ func listJobs(w io.Writer, projectID, filter string) (*talent.ListJobsResponse, 
 
 	client, err := google.DefaultClient(ctx, talent.CloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.DefaultClient: %v", err)
+		return nil, fmt.Errorf("google.DefaultClient: %w", err)
 	}
 	// Create the jobs service client.
 	service, err := talent.New(client)
 	if err != nil {
-		return nil, fmt.Errorf("talent.New: %v", err)
+		return nil, fmt.Errorf("talent.New: %w", err)
 	}
 
 	parent := "projects/" + projectID
 	resp, err := service.Projects.Jobs.List(parent).Filter(filter).Do()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to list jobs with filter: %q: %v", filter, err)
+		return nil, fmt.Errorf("Failed to list jobs with filter: %q: %w", filter, err)
 	}
 
 	fmt.Fprintln(w, "Jobs:")
@@ -197,4 +199,4 @@ func listJobs(w io.Writer, projectID, filter string) (*talent.ListJobsResponse, 
 	return resp, err
 }
 
-// [END list_jobs]
+// [END job_list_jobs]
